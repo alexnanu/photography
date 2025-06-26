@@ -2247,20 +2247,28 @@ input, select, textarea {
 			}
 
 			#main > section.one {
-				background: #81918E;
+				background-color: #81918E;
 				background-image: url("../../images/banner.jpg");
 			}
 
 			#main > section.two {
-				background: #f5fafa;
+				background-color: #f5fafa;
+				background-image: url("../../images/gray.png");
 			}
 
 			#main > section.three {
-				background: #ecf1f1;
+				background-color: #ecf1f1;
+				background-image: url("../../images/black.png");
 			}
 
 			#main > section.four {
-				background: #e8edec;
+				background-color: #e8edec;
+				background-image: url("../../images/gray.png");
+			}
+
+			#main > section.five {
+				background-color: #ecf1f1;
+				background-image: url("../../images/black.png");
 			}
 
 /* Wide */
