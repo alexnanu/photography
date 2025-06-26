@@ -2247,20 +2247,20 @@ input, select, textarea {
 			}
 
 			#main > section.one {
-				background-color: #81918E;
+				background: #81918E;
 				background-image: url("../../images/banner.jpg");
 			}
 
 			#main > section.two {
-				background-color: #f5fafa;
+				background: #f5fafa;
 			}
 
 			#main > section.three {
-				background-color: #ecf1f1;
+				background: #ecf1f1;
 			}
 
 			#main > section.four {
-				background-color: #e8edec;
+				background: #e8edec;
 			}
 
 /* Wide */
