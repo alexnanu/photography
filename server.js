@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs').promises;
 const path = require('path');
 
-const folderPath = './'; // Change this to the path of your folder with .html files
+const folderPath = '/get-files/'; // Change this to the path of your folder with .html files
 
 const server = http.createServer(async (req, res) => {
   if (req.url === '/get-files') {
