@@ -3,22 +3,24 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
 body {
   background-color: #222629;
-    margin: 0;
-    overflow-x: hidden; /* Prevent horizontal scrollbar on body */
   font-family: "Lato", sans-serif;
+            min-height: 100vh;
+            display: flex;
 }
 
 .sidebar {
-  margin: 0;
   padding: 0;
   width: 15%;
   background-color: #222629;
-  position: fixed;
-  height: 100%;
-  overflow: auto;
-  box-shadow: 0 0px 20px rgba(0,0,0,.4);
+
+
+
 
 }
 
@@ -27,6 +29,7 @@ body {
   color: white;
   padding: 16px;
   text-decoration: none;
+  text-align:right;
 }
  
 .sidebar a:focus {
@@ -39,19 +42,13 @@ body {
   color: white;
 }
 
-div.content {
-  background-color: #222629;
-  margin-left: 200px;
-  padding: 1px 16px;
-  height: 1000px;
-}
 
 iframe.content {
+
+  box-shadow: 0 0px 20px rgba(0,0,0,.4);
 	border:none;
   background-color: #222629;
-  padding: 0px 16%;
-  height: 1000px;
-  width:88%;
+            flex: 1;
 
  }
 
@@ -72,9 +69,7 @@ iframe.content {
   }
 }
 
-img:where([src=""], [src$="invalid-image.jpg"]) {
-    display: none; /* Hide if src is empty or points to a specific invalid image */
-}
+
 </style>
 
 </head>
