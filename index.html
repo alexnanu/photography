@@ -1,89 +1,885 @@
 <!DOCTYPE html>
-<html>
+<html lang="ro">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-body {
-  background-color: #222629;
-  font-family: "Lato", sans-serif;
-            min-height: 100vh;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formular și Rezultate Căutare Imobiliară</title>
+    <!-- Încarcă Tailwind CSS pentru o stilizare rapidă și elegantă -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Asigură un font curat și centrează conținutul pe verticală și orizontală */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Simulare pentru harta.png */
+            background-image: url('https://placehold.co/1920x1080/2f4f4f/cccccc?text=HARTA+IMOBILIARA+90%25');
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed; 
+
             display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Stil de bază pentru câmpurile de input/select */
+        .search-field {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            color: #374151;
+            height: 42px; 
+            text-align: left;
+        }
+        
+        .search-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+            outline: none;
+        }
+
+        /* Clasa pentru a aplica o opacitate de 85% pe ambele containere (formular și rezultate) */
+        .project-wrapper {
+            opacity: 0.95; /* Opacitatea generală */
+            transition: opacity 0.3s ease;
+        }
+
+        /* Stiluri pentru paginare */
+        .pagination-link {
+            @apply px-4 py-2 border rounded-lg hover:bg-blue-50 transition-colors cursor-pointer;
+        }
+        .pagination-link.active {
+            @apply bg-blue-600 text-white border-blue-600 hover:bg-blue-700;
+        }
+        
+        /* Modifică alinierea verticală a celulelor tabelului (rândurilor) la TOP */
+        #results-table-body td {
+            vertical-align: top; 
+        }
+
+        /* Stiluri pentru MODAL (Pop-up) */
+        #modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: 1000;
+            display: none; /* Ascuns implicit */
+            justify-content: center;
+            align-items: center;
+            overflow-y: hidden; /* Permite scroll în caz de conținut mare */
+            padding: 20px;
+        }
+
+        #modal-content {
+            background-color: white;
+            border-radius: 1rem; /* 16px */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 90%;
+            width: 900px;
+            max-height: 95vh; 
+            overflow: hidden;
+            position: relative;
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.25s ease-in-out;
+        }
+
+#modal-backdrop.show {
+    display: flex;
 }
 
-.sidebar {
-  padding: 0;
-  width: 270px;
-  background-color: #222629;
 
+     #modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
 
+        /* Header fixat în modal la scroll */
+        .modal-header-fixed {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: white;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
 
-
-}
-
-.sidebar a {
-  display: block;
-  color: white;
-  padding: 16px;
-  text-decoration: none;
-  text-align:right;
-}
- 
-.sidebar a:focus {
-  background-color: #04AA6D;
-  color: white;
-}
-
-.sidebar a:hover:not(.active) {
-  background-color: #555;
-  color: white;
-}
-
-
-iframe.content {
-
-  box-shadow: 0 0px 20px rgba(0,0,0,.4);
-	border:none;
-  background-color: #222629;
-            flex: 1;
-
- }
-
-@media screen and (max-width: 700px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
-  .sidebar a {float: left;}
-  div.content {margin-left: 0;}
-}
-
-@media screen and (max-width: 400px) {
-  .sidebar a {
-    text-align: center;
-    float: none;
-  }
-}
-
-
-</style>
-
+        /* Miniaturi imagini în modal */
+        .thumbnail-img {
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 3px solid transparent;
+            opacity: 0.7;
+        }
+        .thumbnail-img.active {
+            border-color: #2563eb;
+            opacity: 1;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
+        }
+        .thumbnail-img:hover {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
 
-<div class="sidebar">
-  <a href="test.html" target="iframe_a">Intro</a>
-  <a href="Listings/2025.06.25 – 195.000€ Apartament PalTim/index.html" target="iframe_a">🗓️2025.06.25 💰195.000€<br />Apartament cu 2 camere<br />📌PalTim, Timisoara</a>
-  <a href="Listings/2025.06.25 – 420.000€ Casa Individuala Ciarda Rosie/index.html" target="iframe_a">🗓️2025.06.25 💰420.000€<br />Casa Individuala<br />📌Ciarda Rosie, Timisoara</a>
+
+
+	<!-- TOP MENU BAR – Fixed at the very top, works on all pages -->
+<div class="fixed inset-x-0 top-0 z-50">
+    <div class="bg-white shadow-lg border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="index.html" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center text-white font-bold text-xl">H</div>
+                        <span class="text-xl font-bold text-gray-800 hidden sm:block">Real Estate</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Contact Us</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Educational</a>
+                    <a href="index.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Buy</a>
+                    <a href="index.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Rent</a>
+                    <a href="agent.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Find an Agent</a>
+                    <a href="crm.html" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition shadow-md">Login</a>
+                </div>             
+            </div>
+        </div>
+    </div>
 </div>
 
-<iframe class="content" src="iframe.html" name="iframe_a"  title="Iframe Example"></iframe>
+
+    
+    <!-- Containerul principal al paginii -->
+    <div class="w-11/12 max-w-7xl space-y-8 project-wrapper">
+
+        <!-- CONTAINER FORMULAR -->
+        <div id="search-form-wrapper" class="bg-white p-6 md:p-10 rounded-2xl shadow-2xl border-t-4 border-blue-600">
+            
+            <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">
+                Caută
+            </h1>
+
+            <!-- Formularul de căutare -->
+            <div id="search-form" class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 items-end">
+                
+                <!-- 1. Dropdown: Tip Proprietate -->
+                <div class="flex flex-col space-y-1 w-full md:w-64">
+                    <label for="property-type" class="text-sm font-medium text-gray-700">Tip Proprietate</label>
+                    <select id="property-type" class="search-field w-full">
+                        <option value="apartments">Apartamente</option>
+                        <option value="houses">Case</option>
+                        <option value="lands">Terenuri</option>
+                    </select>
+                </div>
+
+                <!-- 2. Dropdown: Tranzacție -->
+                <div class="flex flex-col space-y-1 w-full md:w-64">
+                    <label for="transaction-type" class="text-sm font-medium text-gray-700">Tranzacție</label>
+                    <select id="transaction-type" class="search-field w-full">
+                        <option value="sale">De vânzare</option>
+                        <option value="rent">De închiriat</option>
+                    </select>
+                </div>
+
+                <!-- 3. Caseta Text: Locație -->
+                <div class="relative flex-grow w-full flex flex-col space-y-1">
+                    <label for="location" class="text-sm font-medium text-gray-700">Locație</label>
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <input type="text" id="location" placeholder="Oraș, cartier sau zonă..." class="search-field w-full pl-10" value="Lipovei, Timisoara">
+                    </div>
+                </div>
+
+                <!-- 4. Buton Caută -->
+                <button id="search-button" class="w-full md:w-auto flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-2 h-10 md:h-[42px]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.3-4.3"/>
+                    </svg>
+                    <span>Caută</span>
+                </button>
+            </div>
+        </div>
+        <!-- SFARSIT CONTAINER FORMULAR -->
+
+        <!-- CONTAINER REZULTATE -->
+        <div id="results-container" class="bg-white p-6 md:p-8 rounded-2xl shadow-2xl">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+                Rezultate Căutare (10/30)
+            </h2>
+
+            <!-- TABEL REZULTATE -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <!-- Coloana 1: Proprietate & Adresă (CU SPATIU MARE PENTRU IMAGINE) -->
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proprietate & Detalii</th>
+                            <!-- Coloana 2: Descriere -->
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descriere</th>
+                            <!-- Coloana 3: Contact Agent, Preț & Comision -->
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Agent, Preț & Comision</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Rândurile tabelului vor fi generate de JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- PAGINARE -->
+            <div id="pagination" class="flex justify-center items-center space-x-2 mt-6">
+                <span class="text-sm text-gray-500 mr-2">Pagina:</span>
+                <a href="#" class="pagination-link active">1</a>
+                <a href="#" class="pagination-link">2</a>
+                <a href="#" class="pagination-link">3</a>
+                <span class="pagination-link text-gray-400 cursor-default">...</span>
+                <a href="#" class="pagination-link">4</a>
+            </div>
+
+        </div>
+        <!-- SFARSIT CONTAINER REZULTATE -->
+
+    </div>
+
+    <!-- START MODAL POP-UP (Picture-in-Picture) -->
+    <!-- Ascuns inițial, se va afișa la click -->
+    <div id="modal-backdrop" onclick="hideDetailsModal(event)">
+        <div id="modal-content" onclick="event.stopPropagation()">
+            <!-- Conținutul va fi injectat aici -->
+        </div>
+    </div>
+    <!-- END MODAL POP-UP (Picture-in-Picture) -->
+
+<script>
+    // Definim datele fictive complete (toate 10 obiecte).
+    const resultsData = [
+        { 
+            address: 'Str. Lalelelor 5, Lipovei', rooms: 2, area: 60, price: 95000, floor: 3, layout: 'decomandat', commission: '3%', // Implicit 3%
+            images: [
+                'https://placehold.co/800x600/E0E7FF/1E40AF?text=Principal%201', 
+                'https://placehold.co/800x600/FFD1D1/D14040?text=Bucatarie', 
+                'https://placehold.co/800x600/D1FFD1/40D140?text=Baie'
+            ], 
+            description: 'Apartament modern, complet renovat și mobilat, situat la etajul 3 al unui bloc reabilitat termic. Locația este ideală, fiind amplasat chiar lângă Parcul Central. Dispune de balcon închis și acces rapid la toate facilitățile zonei Lipovei.', 
+            agent: { name: 'Andrei Popescu', phone: '0721 123 456' } 
+        },
+        { 
+            address: 'Bd. Severinului, Lipovei', rooms: 2, area: 58, price: 92500, floor: 8, layout: 'semidecomandat', commission: '3%', 
+            images: [
+                'https://placehold.co/800x600/F1F5F9/64748B?text=Principal%202', 
+                'https://placehold.co/800x600/FCE7F3/BE185D?text=Dormitor', 
+                'https://placehold.co/800x600/DBEAFE/1E40AF?text=Balcon'
+            ], 
+            description: 'Vedere panoramică impresionantă de la etajul 8. Blocul este izolat termic și beneficiază de lift nou. Se vinde parțial mobilat. Oportunitate excelentă pentru cei care doresc să se mute imediat. Documentație la zi, disponibil pentru vizionare rapidă.', 
+            agent: { name: 'Ioana Mihai', phone: '0744 987 654' } 
+        },
+        { 
+            address: 'Calea Lipovei 40', rooms: 2, area: 65, price: 105000, floor: 5, layout: 'decomandat', commission: '0%', // 0% Comision
+            images: [
+                'https://placehold.co/800x600/D1FFD1/40D140?text=Principal%203', 
+                'https://placehold.co/800x600/D1D1FF/4040D1?text=Vedere', 
+                'https://placehold.co/800x600/FFFFD1/D1D140?text=Hol'
+            ], 
+            description: 'Spațios și luminos, acest apartament este perfect pentru o familie tânără. Este situat într-o zonă cu acces facil la mijloacele de transport în comun, inclusiv tramvai și autobuz. Finisajele sunt de calitate superioară, iar bucătăria este complet utilată. Se acceptă credit ipotecar.', 
+            agent: { name: 'Marius Tănase', phone: '0722 555 111' } 
+        },
+        { 
+            address: 'Aleea Fagului 2', rooms: 2, area: 55, price: 89900, floor: 1, layout: 'semidecomandat', commission: '3%', 
+            images: [
+                'https://placehold.co/800x600/FFD1D1/D14040?text=Principal%204', 
+                'https://placehold.co/800x600/D1FFD1/40D140?text=Curte', 
+                'https://placehold.co/800x600/D1D1FF/4040D1?text=Garaj'
+            ], 
+            description: 'Ideal pentru investiție sau ca prima locuință, necesită renovare ușoară, oferind astfel posibilitatea de personalizare. Bloc liniștit, cu vecini prietenoși. Piața și școala sunt la doar câteva minute de mers pe jos. Preț negociabil, mutare rapidă.', 
+            agent: { name: 'Andrei Popescu', phone: '0721 123 456' } 
+        },
+        { 
+            address: 'Str. Mesteacănului, Lipovei', rooms: 2, area: 62, price: 98000, floor: 4, layout: 'decomandat', commission: '3%', 
+            images: [
+                'https://placehold.co/800x600/E0E7FF/1E40AF?text=Principal%205', 
+                'https://placehold.co/800x600/FFD1D1/D14040?text=Living', 
+                'https://placehold.co/800x600/D1FFD1/40D140?text=Terasa'
+            ], 
+            description: 'Apartament în bloc nou, finalizat în 2023, cu structură de rezistență din beton și cărămidă. Include un loc de parcare privat, suprafață utilă generoasă și finisaje moderne. Centrală termică proprie și costuri de întreținere reduse. Se oferă garanție.', 
+            agent: { name: 'Ioana Mihai', phone: '0744 987 654' } 
+        },
+        { 
+            address: 'Piața Consiliul Europei', rooms: 2, area: 59, price: 97500, floor: 7, layout: 'semidecomandat', commission: '3%', 
+            images: [
+                'https://placehold.co/800x600/F1F5F9/64748B?text=Principal%206', 
+                'https://placehold.co/800x600/FCE7F3/BE185D?text=Dressing', 
+                'https://placehold.co/800x600/DBEAFE/1E40AF?text=Balcon'
+            ], 
+            description: 'Situat într-o zonă semi-centrală, acest apartament oferă acces rapid la magazine, școli, grădinițe și farmacii. Este complet mobilat și utilat, gata de mutat. Balcon tip logie închis, ideal pentru relaxare. Vizionările se fac cu programare în prealabil.', 
+            agent: { name: 'Marius Tănase', phone: '0722 555 111' } 
+        },
+        { 
+            address: 'Zona Liceu, Lipovei', rooms: 2, area: 56, price: 91000, floor: 2, layout: 'decomandat', commission: '0%', // 0% Comision
+            images: [
+                'https://placehold.co/800x600/D1FFD1/40D140?text=Principal%207', 
+                'https://placehold.co/800x600/D1D1FF/4040D1?text=Parchet', 
+                'https://placehold.co/800x600/FFFFD1/D1D140?text=Usi'
+            ], 
+            description: 'Zonă liniștită, vedere spre curtea interioară, ferit de zgomotul străzii principale. Se vinde mobilat complet, inclusiv electrocasnice. Bloc vechi, dar bine întreținut. Aproape de stațiile de transport și de liceul din zonă. Oportunitate excelentă.', 
+            agent: { name: 'Andrei Popescu', phone: '0721 123 456' } 
+        },
+        { 
+            address: 'Str. Frunzișului 12', rooms: 2, area: 64, price: 102000, floor: 1, layout: 'decomandat', commission: '3%', 
+            images: [
+                'https://placehold.co/800x600/FFD1D1/D14040?text=Principal%208', 
+                'https://placehold.co/800x600/E0E7FF/1E40AF?text=Mobila', 
+                'https://placehold.co/800x600/FFD1D1/D14040?text=Electrocasnice'
+            ], 
+            description: 'Design interior premium, cu finisaje de lux, gresie și faianță de import. Bucătărie dotată cu electrocasnice de ultimă generație. Apartamentul este situat la etajul 1, ideal pentru cei care evită liftul. Prețul este ușor negociabil. Disponibil imediat.', 
+            agent: { name: 'Ioana Mihai', phone: '0744 987 654' } 
+        },
+        { 
+            address: 'Bloc nou, Lipovei', rooms: 2, area: 70, price: 110000, floor: 9, layout: 'decomandat', commission: '3%', 
+            images: [
+                'https://placehold.co/800x600/E0E7FF/1E40AF?text=Principal%209', 
+                'https://placehold.co/800x600/F1F5F9/64748B?text=Vedere%202', 
+                'https://placehold.co/800x600/FCE7F3/BE185D?text=Piscina'
+            ], 
+            description: 'Apartament tip penthouse cu terasă spațioasă de 15mp, perfectă pentru serile de vară. Este situat în cel mai nou complex rezidențial din zonă. Beneficiază de finisaje moderne, parcare subterană inclusă și securitate 24/7. Ofertă unică în Lipovei.', 
+            agent: { name: 'Marius Tănase', phone: '0722 555 111' } 
+        },
+        { 
+            address: 'Lângă mall, Lipovei', rooms: 2, area: 61, price: 96500, floor: 6, layout: 'semidecomandat', commission: '0%', // 0% Comision
+            images: [
+                'https://placehold.co/800x600/D1FFD1/40D140?text=Principal%2010', 
+                'https://placehold.co/800x600/D1D1FF/4040D1?text=Geamuri', 
+                'https://placehold.co/800x600/FFFFD1/D1D140?text=Izolatie'
+            ], 
+            description: 'Locație excelentă, la doar 5 minute de mers pe jos de mall și zona comercială. Apartamentul este recent igienizat și vopsit, gata să primească noul proprietar. Bloc anvelopat termic. Ideal pentru cupluri tinere sau studenți. Cheltuieli de întreținere mici.', 
+            agent: { name: 'Andrei Popescu', phone: '0721 123 456' } 
+        }
+    ];
+
+    // Indicii rândurilor (index 0) care trebuie să aibă oferte concurente (rândurile 1, 4, 7)
+    const competingAgentsIndices = [0, 3, 6]; 
+    
+    // Stocare pentru a ține evidența indexului curent al imaginii pentru caruselul principal
+    const currentImageIndices = new Array(resultsData.length).fill(0);
+
+    // Stocare pentru a ține evidența indexului curent al imaginii pentru caruselele concurente
+    const competingAgentImageIndices = {};
+
+    // Baza de date pentru agenții concurenți, inclusiv comisionul și diferența de preț
+    const baseCompetitiveAgents = [
+        // Elena Tudor: Preț original + 400 EUR, Comision 2%
+        { name: 'Elena Tudor', phone: '0730 234 567', commission: '2%', priceOffset: 400 },
+        // Cristian Dinu: Preț original - 250 EUR, Comision 3%
+        { name: 'Cristian Dinu', phone: '0766 876 543', commission: '3%', priceOffset: -250 },
+        // Vasile Gheorghe: Preț original + 600 EUR, Comision 4%
+        { name: 'Vasile Gheorghe', phone: '0751 333 444', commission: '4%', priceOffset: 600 }
+    ];
+
+    /**
+     * Închide modalul la click în afara conținutului.
+     * @param {Event} event - Evenimentul de click.
+     */
+    function hideDetailsModal(event) {
+        // Închide doar dacă s-a dat click pe fundal (modal-backdrop)
+        if (event.target.id === 'modal-backdrop' || event.target.id === 'close-modal-button') {
+             document.getElementById('modal-backdrop').classList.remove('show');
+             document.getElementById('modal-backdrop').style.display = 'none';
+			 document.body.style.overflow = 'auto';
+        }
+    }
+
+    /**
+     * Afișează pop-up-ul cu detaliile complete ale ofertei (versiune actualizată cu header fixat și thumbnails).
+     * @param {Object} item - Obiectul cu datele complete ale proprietății.
+     * @param {boolean} isCompetitive - Dacă oferta este de la un agent concurent.
+     */
+    function showDetailsModal(item, isCompetitive = false) {
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const modalContent = document.getElementById('modal-content');
+		document.body.style.overflow = 'hidden';
+        
+        // Asigură-te că prețul afișat este cel corect (din obiectul item)
+        const priceValue = item.calculatedPrice || item.price || 0;
+        const priceDisplay = priceValue.toLocaleString('ro-RO');
+
+        const commissionDisplay = item.commission;
+
+        const detailHtml = `
+            <!-- HEADER FIXAT (Sticky) -->
+            <div class="modal-header-fixed">
+                <div class="flex justify-between items-start mb-0">
+                    <div>
+                        <h3 class="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">${item.address}</h3>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl md:text-4xl font-extrabold text-green-700 leading-tight">
+                            ${priceDisplay} €
+                        </div>
+                        <div class="text-sm font-semibold text-gray-600 mt-1">
+                            Comision: <span class="font-bold text-red-600">${commissionDisplay}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Buton Închidere în header -->
+                <button id="close-modal-button" class="absolute top-4 right-6 text-gray-500 hover:text-gray-900 transition-colors" onclick="hideDetailsModal(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- CONȚINUT SCROLLABIL -->
+            <div class="p-6 md:p-8" style="max-height: calc(95vh - 140px); overflow-y: auto;">
+                <!-- Secțiune Imagini: Principală + Thumbnails -->
+                <div class="mb-8 text-center">
+                    <!-- Imagine Principală -->
+                    <img id="main-image" src="${item.images[0]}" alt="Imagine principală" class="w-full max-w-4xl mx-auto rounded-xl shadow-xl object-cover max-h-96">
+                    
+                    <!-- Thumbnails -->
+                    <div class="flex flex-wrap gap-2 mt-4 justify-center">
+                        ${item.images.map((img, i) => `
+                            <img src="${img}" alt="Miniatură ${i + 1}" class="thumbnail-img w-20 h-20 object-cover rounded-lg ${i === 0 ? 'active' : ''}"
+                                 onclick="changeMainImage(this.src, this);">
+                        `).join('')}
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Click pe o miniatură pentru a mări imaginea.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Col 1: Agent -->
+                    <div class="p-5 bg-gray-50 rounded-xl">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Agent Responsabil</h4>
+                        <div class="text-base font-semibold text-gray-900 mb-3">${item.agent.name}</div>
+                        <button 
+                            class="w-full px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors focus:outline-none" 
+                            onclick="revealPhoneNumber(this, '${item.agent.phone}', '${item.agent.phone.replace(/ /g, '')}', ${isCompetitive})"
+                        >
+                            Afișează Numărul de Telefon
+                        </button>
+                    </div>
+
+                    <!-- Col 2: Specificații -->
+                    <div class="p-5 bg-gray-50 rounded-xl">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-3">Specificații</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex justify-between"><span>Camere:</span> <span class="font-bold">${item.rooms}</span></li>
+                            <li class="flex justify-between"><span>Suprafață:</span> <span class="font-bold">${item.area} mp</span></li>
+                            <li class="flex justify-between"><span>Etaj:</span> <span class="font-bold">${item.floor}</span></li>
+                            <li class="flex justify-between"><span>Compartimentare:</span> <span class="font-bold capitalize">${item.layout}</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Descriere -->
+                <div class="p-5 bg-gray-50 rounded-xl">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3">Descriere Detaliată</h4>
+                    <p class="text-sm text-gray-700 leading-relaxed italic">
+                        ${item.description}
+                    </p>
+                </div>
+
+                <!-- Footer Modal -->
+                <div class="mt-4 pt-4 border-t text-sm text-gray-500 text-center">
+                    Click pe fundal pentru a închide.
+                </div>
+            </div>
+        `;
+
+        modalContent.innerHTML = detailHtml;
+        modalBackdrop.style.display = 'flex';
+        // Folosim setTimeout pentru a permite CSS-ului să aplice tranziția
+        setTimeout(() => {
+            modalBackdrop.classList.add('show');
+        }, 10); 
+
+        // Funcție helper pentru schimbarea imaginii principale la click pe thumbnail
+        window.changeMainImage = function(newSrc, clickedThumbnail) {
+            const mainImg = document.getElementById('main-image');
+            if (mainImg) {
+                mainImg.src = newSrc;
+            }
+            // Elimină clasa active de pe toate thumbnails
+            document.querySelectorAll('.thumbnail-img').forEach(thumb => thumb.classList.remove('active'));
+            // Adaugă clasa active pe cea click-uită
+            clickedThumbnail.classList.add('active');
+        };
+    }
+
+    /**
+     * Schimbă imaginea vizibilă în caruselul principal (Coloana 1).
+     * @param {number} rowIndex - Indexul proprietății (rândului) în `resultsData`.
+     * @param {number} direction - 1 pentru înainte (dreapta), -1 pentru înapoi (stânga).
+     */
+    function changeImage(rowIndex, direction) {
+        const item = resultsData[rowIndex];
+        const numImages = item.images.length;
+
+        // Calculează noul index
+        let newIndex = currentImageIndices[rowIndex] + direction;
+
+        // Buclă
+        if (newIndex >= numImages) {
+            newIndex = 0;
+        } else if (newIndex < 0) {
+            newIndex = numImages - 1;
+        }
+
+        // Actualizează indexul stocat
+        currentImageIndices[rowIndex] = newIndex;
+
+        // Găsește elementul imagine corespunzător rândului
+        const imageElement = document.getElementById(`carousel-image-${rowIndex}`);
+        if (imageElement) {
+            // Actualizează sursa imaginii
+            imageElement.src = item.images[newIndex];
+            imageElement.alt = `Imagine ${newIndex + 1} pentru ${item.address}`;
+
+            // Tranziție vizuală rapidă
+            imageElement.classList.add('opacity-0');
+            setTimeout(() => {
+                imageElement.classList.remove('opacity-0');
+            }, 50); 
+        }
+    }
+
+    /**
+     * Schimbă imaginea vizibilă în caruselul unui agent concurent (Rândul Suplimentar).
+     * @param {number} rowIndex - Indexul proprietății principale.
+     * @param {number} agentIndex - Indexul agentului concurent în lista `baseCompetitiveAgents`.
+     * @param {number} direction - 1 pentru înainte (dreapta), -1 pentru înapoi (stânga).
+     */
+    function changeCompetitiveImage(rowIndex, agentIndex, direction) {
+        const item = resultsData[rowIndex];
+        const numImages = item.images.length;
+        const key = `${rowIndex}-${agentIndex}`;
+
+        // Inițializează sau preia indexul curent
+        let currentIndex = competingAgentImageIndices[key] !== undefined ? competingAgentImageIndices[key] : 0;
+        
+        let newIndex = currentIndex + direction;
+
+        // Buclă
+        if (newIndex >= numImages) {
+            newIndex = 0;
+        } else if (newIndex < 0) {
+            newIndex = numImages - 1;
+        }
+
+        // Actualizează indexul stocat
+        competingAgentImageIndices[key] = newIndex;
+
+        // Găsește elementul imagine corespunzător
+        const imageElement = document.getElementById(`carousel-image-${key}`);
+        if (imageElement) {
+            imageElement.src = item.images[newIndex];
+            imageElement.alt = `Imagine ${newIndex + 1} (Concurent) pentru ${item.address}`;
+
+            // Tranziție vizuală rapidă
+            imageElement.classList.add('opacity-0');
+            setTimeout(() => {
+                imageElement.classList.remove('opacity-0');
+            }, 50); 
+        }
+    }
 
 
+    /**
+     * Înlocuiește butonul "Afișează Numărul" cu numărul de telefon ca link de apel.
+     * @param {HTMLElement} button - Elementul buton care a fost apăsat.
+     * @param {string} visibleNumber - Numărul de telefon formatat (ex: '0721 123 456').
+     * @param {string} cleanNumber - Numărul de telefon curățat (fără spații) pentru linkul 'tel:'.
+     * @param {boolean} isCompetitive - True dacă este un agent concurent (pentru stilizare).
+     */
+    function revealPhoneNumber(button, visibleNumber, cleanNumber, isCompetitive = false) {
+        // Creează un nou element <a> pentru a permite apelarea
+        const newLink = document.createElement('a');
+        newLink.href = `tel:${cleanNumber}`;
+        // Schimbă culoarea textului în funcție de tipul agentului
+        const colorClass = isCompetitive ? 'text-green-700 hover:text-green-800' : 'text-blue-600 hover:text-blue-700';
+        newLink.className = `${colorClass} transition-colors flex items-center justify-center w-full font-bold py-2 text-sm`; // Centrat și full-width
+        
+        // Setează conținutul noului link (Numărul cu iconiță)
+        newLink.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 inline-block align-middle">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 3.08 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            ${visibleNumber}
+        `;
+
+        // Înlocuiește butonul existent cu noul link
+        const parentDiv = button.parentNode;
+        parentDiv.replaceChild(newLink, button);
+    }
+    
+    /**
+     * Helper function to generate the HTML block for a supplementary agent, including the reveal button and CAROUSEL.
+     * @param {Object} agent - Agent data { name, phone, commission, priceOffset }.
+     * @param {number} rowIndex - Indexul proprietății principale.
+     * @param {number} agentIndex - Indexul agentului concurent în lista `baseCompetitiveAgents`.
+     * @param {Object} item - Obiectul cu datele complete ale proprietății principale.
+     * @returns {string} HTML for the agent block with carousel.
+     */
+    function generateAgentBlock(agent, rowIndex, agentIndex, item) {
+        const cleanPhone = agent.phone.replace(/ /g, '');
+        // Imaginea inițială (index 0) este preluată din setul principal
+        const imagePath = resultsData[rowIndex].images[0]; 
+        const uniqueId = `${rowIndex}-${agentIndex}`;
+        
+        // Creăm obiectul complet pentru modal
+        const competitiveItem = {
+            ...item, 
+            calculatedPrice: item.price + agent.priceOffset, // Prețul real calculat
+            commission: agent.commission, 
+            agent: { name: agent.name, phone: agent.phone } 
+        };
+        
+        // Metoda ROBUSTĂ: Stringify obiectul complet și stocăm în data-attribute
+        const competitiveItemJsonString = JSON.stringify(competitiveItem); 
+
+        return `
+            <!-- Card Agent Concurent cu Dimensiune Uniformă și Carusel -->
+            <div class="p-3 border border-gray-200 rounded-xl bg-white flex flex-col items-center text-center shadow-lg transition-shadow hover:shadow-xl hover:bg-gray-50 cursor-pointer" 
+                 data-agent-data='${competitiveItemJsonString}' 
+                 onclick="showDetailsModal(JSON.parse(this.dataset.agentData), true)">
+                
+                <!-- START Carusel Imagine Concurent (w-48 h-36, aceeași dimensiune ca oferta principală) -->
+                <div class="relative w-48 h-36 rounded-lg shadow-md flex-shrink-0 group overflow-hidden mb-3">
+                    <!-- Imaginea principală (Concurent) -->
+                    <img id="carousel-image-${uniqueId}" class="w-full h-full object-cover transition-opacity duration-150" src="${imagePath}" alt="Imagine proprietate (Ofertă concurentă)">
+                    
+                    <!-- Buton Stânga (Prev) - SĂGEATĂ NEAGRĂ -->
+                    <button 
+                        class="absolute left-0 top-0 bottom-0 px-1 flex items-center bg-transparent group-hover:bg-white/50 group-hover:hover:bg-white/70 text-black transition-colors duration-300 opacity-100"
+                        onclick="event.stopPropagation(); changeCompetitiveImage(${rowIndex}, ${agentIndex}, -1);"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+
+                    <!-- Buton Dreapta (Next) - SĂGEATĂ NEAGRĂ -->
+                    <button 
+                        class="absolute right-0 top-0 bottom-0 px-1 flex items-center bg-transparent group-hover:bg-white/50 group-hover:hover:bg-white/70 text-black transition-colors duration-300 opacity-100"
+                        onclick="event.stopPropagation(); changeCompetitiveImage(${rowIndex}, ${agentIndex}, 1);"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
+                <!-- END Carusel Imagine Concurent -->
+
+                <!-- Preț și Comision -->
+                <div class="font-bold text-lg text-red-600 leading-tight">${(item.price + agent.priceOffset).toLocaleString('ro-RO')} €</div>
+                
+                <div class="text-xs font-medium text-gray-600 mb-2">Comision: <span class="text-red-700 font-bold">${agent.commission}</span></div>
+                
+                <!-- Nume Agent și Buton Contact -->
+                <div class="font-semibold text-gray-800 text-sm mb-1">${agent.name}</div>
+                
+                <button 
+                    class="px-3 py-1 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors mt-1 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50" 
+                    onclick="event.stopPropagation(); revealPhoneNumber(this, '${agent.phone}', '${cleanPhone}', true)"
+                >
+                    Afișează Numărul
+                </button>
+                
+            </div>
+        `;
+    }
+
+
+    // Funcție pentru a popula tabelul cu date
+    function populateTable() {
+        const tbody = document.getElementById('results-table-body');
+        tbody.innerHTML = ''; // Golește rândurile existente
+
+        resultsData.forEach((item, index) => { // Folosim index pentru a verifica poziția
+            
+            // ====================================================================
+            // 1. Rândul Principal
+            // ====================================================================
+            const row = tbody.insertRow();
+            
+            // Metoda ROBUSTĂ: Stringify obiectul principal și stocăm în data-attribute
+            const mainItemJsonString = JSON.stringify(item);
+            row.setAttribute('data-agent-data', mainItemJsonString);
+            
+            // Adăugăm event listener la rândul principal, citind din data-attribute
+            row.onclick = function() {
+                showDetailsModal(JSON.parse(this.dataset.agentData), false);
+            };
+
+            row.className = 'hover:bg-gray-50 transition-colors cursor-pointer';
+            
+            // Formatare uniformă a textului de comision (Comision: X%)
+            const commissionText = `<span class="text-xs font-semibold text-gray-700">Comision: <span class="font-bold text-red-600">${item.commission}</span></span>`;
+
+
+            // 1. Coloana Proprietate & Detalii (Compactă cu CARUSEL)
+            row.insertCell(0).innerHTML = `
+                <div class="px-6 py-4 flex items-start space-x-4">
+                    <!-- START Carusel Imagine (w-48 h-36) -->
+                    <div class="relative w-48 h-36 rounded-lg shadow-md flex-shrink-0 group overflow-hidden">
+                        <!-- Imaginea principală -->
+                        <img id="carousel-image-${index}" class="w-full h-full object-cover transition-opacity duration-150" src="${item.images[0]}" alt="Imagine principală proprietate">
+                        
+                        <!-- Buton Stânga (Prev) - SĂGEATĂ NEAGRĂ -->
+                        <button 
+                            class="absolute left-0 top-0 bottom-0 px-1 flex items-center bg-transparent group-hover:bg-white/50 group-hover:hover:bg-white/70 text-black transition-colors duration-300 opacity-100"
+                            onclick="event.stopPropagation(); changeImage(${index}, -1);"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+
+                        <!-- Buton Dreapta (Next) - SĂGEATĂ NEAGRĂ -->
+                        <button 
+                            class="absolute right-0 top-0 bottom-0 px-1 flex items-center bg-transparent group-hover:bg-white/50 group-hover:hover:bg-white/70 text-black transition-colors duration-300 opacity-100"
+                            onclick="event.stopPropagation(); changeImage(${index}, 1);"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+                    <!-- END Carusel Imagine -->
+
+                    <div class="flex flex-col">
+                        <!-- Adresa -->
+                        <div class="text-sm font-semibold text-gray-800 mb-2">${item.address}</div>
+                        
+                        <!-- GRUP DETALII (Text Simplificat) -->
+                        <div class="flex flex-col space-y-1 text-sm text-gray-700">
+                            <!-- 1. Camere -->
+                            <div class="font-semibold">${item.rooms} camere</div>
+
+                            <!-- 2. Suprafață -->
+                            <div>${item.area} mp</div>
+                            
+                            <!-- 3. Etaj -->
+                            <div>Etaj: ${item.floor}</div>
+                            
+                            <!-- 4. Compartimentare -->
+                            <div class="capitalize">${item.layout}</div>
+                        </div>
+                        <!-- SFARSIT GRUP DETALII -->
+                    </div>
+                </div>
+            `;
+            
+            // 2. Coloana Descriere (Dynamic)
+            row.insertCell(1).innerHTML = `
+                <div class="px-6 py-4">
+                    <p class="text-sm text-gray-700 italic leading-snug">
+                        ${item.description}
+                    </p>
+                </div>
+            `;
+
+            // 3. Coloana Contact Agent, Preț & Comision (CENTRATA)
+            const cleanPhone = item.agent.phone.replace(/ /g, '');
+            row.insertCell(2).innerHTML = `
+                <div class="px-6 py-4 text-center">
+                    <!-- Nume Agent -->
+                    <div class="font-bold text-base text-gray-800">${item.agent.name}</div>
+                    
+                    <!-- Buton pentru a afișa numărul de telefon (Culoare ALBSTRĂ) -->
+                    <button 
+                        class="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 mx-auto block" 
+                        onclick="event.stopPropagation(); revealPhoneNumber(this, '${item.agent.phone}', '${cleanPhone}', false)"
+                    >
+                        Afișează Numărul
+                    </button>
+
+                    <!-- Prețul MUTAT AICI (Centrat) -->
+                    <div class="mt-4">
+                        <div class="text-xl font-extrabold text-green-700 leading-tight">
+                            ${item.price.toLocaleString('ro-RO')} €
+                        </div>
+                        
+                        <!-- Comisionul MUTAT AICI (Uniformizat, Centrat) -->
+                        <div class="mt-1">
+                            ${commissionText} 
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // ====================================================================
+            // 2. Rândul Suplimentar (Oferte Concurente)
+            // ====================================================================
+            if (competingAgentsIndices.includes(index)) {
+                
+                const newRow = tbody.insertRow(); 
+                // Stil diferit pentru rândul de agenți concurenți
+                newRow.className = 'bg-blue-50 border-t border-b border-blue-200';
+                
+                const cell = newRow.insertCell(0);
+                cell.colSpan = 3; // Ocupă toată lățimea
+                cell.className = 'p-4'; // Aplicăm padding pe celulă
+
+                // Calculăm datele competitive
+                const competitiveOffers = baseCompetitiveAgents.map(agent => {
+                    // Calculăm prețul cu offset-ul agentului (+/- câteva sute de euro)
+                    const newPrice = item.price + agent.priceOffset; 
+                    
+                    return {
+                        ...agent,
+                        // Adăugăm calculatedPrice pentru a fi folosit în modal
+                        calculatedPrice: newPrice 
+                    };
+                });
+
+                // Generare blocuri agenți concurenți cu carusel
+                const agentBlocks = competitiveOffers.map((agent, agentIndex) => generateAgentBlock(agent, index, agentIndex, item)).join('');
+
+                cell.innerHTML = `
+                    <div class="flex flex-col space-y-4">
+                        <h4 class="text-base font-bold text-blue-800">
+                            Alte oferte pentru aceeași proprietate (Rândul ${index + 1})
+                        </h4>
+                        <!-- Grilă pentru a afișa agenții (grid-cols-2, sm:grid-cols-3, lg:grid-cols-4) -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 justify-items-center">
+                            ${agentBlocks}
+                        </div>
+                    </div>
+                `;
+            }
+            // ====================================================================
+
+        });
+    }
+
+    // Funcție pentru a prelua datele din formular (rămâne neschimbată)
+    function performSearch() {
+        const type = document.getElementById('property-type').value;
+        const transaction = document.getElementById('transaction-type').value;
+        const location = document.getElementById('location').value.trim();
+
+        const searchParams = {
+            'Tip Proprietate': type,
+            'Tranzacție': transaction,
+            'Locație': location || 'Nespecificată'
+        };
+
+        console.log("Căutare inițiată cu parametrii:", searchParams);
+        populateTable(); 
+    }
+
+    // Adaugă event listener pe butonul de căutare
+    document.getElementById('search-button').addEventListener('click', performSearch);
+
+    // Populează tabelul la încărcarea paginii
+    document.addEventListener('DOMContentLoaded', populateTable);
+</script>
 
 </body>
 </html>
