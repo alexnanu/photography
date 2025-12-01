@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Imobiliar - Gestiune Proprietăți (Inline Edit & Filter)</title>
+    <!-- Încarcă Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Asigură un font curat */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+        }
+        /* Stil de bază pentru câmpurile de input/select */
+        .search-field {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .search-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+            outline: none;
+        }
+        /* Stil pentru a ascunde și a afișa panoul de editare/adăugare (MODALA ESTE ACUM INLINE) */
+        #edit-modal {
+            display: none; /* Eliminat complet din fluxul vizual */
+        }
+
+        /* Containerul listei (simulează tabelul responsiv) */
+        .property-grid {
+            display: grid;
+            grid-template-columns: 
+                minmax(120px, 1fr) /* Status */
+                160px /* Poza (160x90) */
+                minmax(100px, 1fr) /* Tip */
+                minmax(200px, 1.5fr) /* Caracteristici */
+                minmax(200px, 2fr) /* Adresa */
+                minmax(150px, 1.5fr) /* Pret/Comision */
+                minmax(100px, 1fr); /* Portaluri */
+            gap: 16px;
+            padding: 8px 0;
+            align-items: center;
+        }
+
+        /* Ascunde coloanele la mobil pentru simplitate */
+        @media (max-width: 1024px) {
+             .property-grid {
+                grid-template-columns: 
+                    minmax(100px, 1fr) /* Status */
+                    100px /* Imagine - Păstrăm 100px la mobil pentru lizibilitate */
+                    minmax(150px, 2fr) /* Tip + Locație */
+                    minmax(100px, 1fr); /* Preț */
+            }
+            /* Menținem doar coloanele esențiale pe mobil */
+            .lg-only-col { display: none; }
+        }
+
+        .grid-header {
+            font-weight: 600;
+            color: #4b5563;
+            padding: 8px 0;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 8px;
+        }
+        
+        /* Container pentru dropdown în header */
+        .header-dropdown-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            padding-right: 16px; /* Spațiu pentru iconiță */
+        }
+        .header-dropdown-content {
+            position: absolute;
+            z-index: 10;
+            background: white;
+            border: 1px solid #e5eeef;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 12px;
+            min-width: 200px;
+            top: 100%; /* Sub header */
+            left: 0;
+            margin-top: 5px;
+            display: none;
+        }
+        .header-dropdown-container.open .header-dropdown-content {
+            display: block;
+        }
+        
+        .grid-row {
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.2s;
+            cursor: pointer; /* Am reintrodus cursor pointer pentru click de expandare/editare */
+        }
+        .grid-row:hover {
+            background-color: #f0f4f8; /* Culoare mai vizibilă la hover */
+        }
+        /* Stil pentru rândul expandat (Inline Edit Form) */
+        .inline-edit-form {
+            grid-column: 1 / -1; /* Ocupă toată lățimea gridului */
+            display: none;
+            padding: 20px 0;
+            background-color: #f9fafb;
+            border-top: 2px solid #3b82f6;
+            margin-top: 12px;
+        }
+        .grid-row.expanded .inline-edit-form {
+            display: block;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+
+	<!-- TOP MENU BAR – Fixed at the very top, works on all pages -->
+<div class="fixed inset-x-0 top-0 z-50">
+    <div class="bg-white shadow-lg border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="index.html" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center text-white font-bold text-xl">H</div>
+                        <span class="text-xl font-bold text-gray-800 hidden sm:block">Real Estate</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Contact Us</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Educational</a>
+                    <a href="index.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Buy</a>
+                    <a href="index.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Rent</a>
+                    <a href="agent.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Find an Agent</a>
+                    <a href="crm.html" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition shadow-md">Login</a>
+                </div>             
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="max-w-7xl mx-auto w-full">
+        <!-- Antet și Stare Utilizator Mockup -->
+        <header class="mb-8 p-4 bg-white shadow-lg rounded-xl flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-800">CRM Imobiliar</h1>
+            <div id="auth-status" class="text-sm text-gray-600 flex items-center">
+                <span class="mr-2">Utilizator Mockup:</span>
+                <span id="user-display" class="font-medium text-blue-600 truncate max-w-xs">agent_demo_123456</span>
+            </div>
+        </header>
+
+        <!-- Rezultate Proprietăți - Structură Listă -->
+        <div class="bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
+            
+            <!-- Secțiune Tab-uri Filtrare Principală și Buton Adăugare -->
+            <!-- AM SCOS clasa border-b border-gray-200 DE AICI -->
+            <div class="flex items-center mb-6"> 
+                <!-- Container Tab-uri -->
+                <div class="flex flex-grow" id="main-tabs">
+                    <button data-tab="my" class="tab-button py-2 px-4 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50/50 transition duration-150 ease-in-out">
+                        Listările Mele (<span id="property-count">0</span>)
+                    </button>
+                    <button data-tab="office" class="tab-button py-2 px-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition duration-150 ease-in-out">
+                        Listările Biroului
+                    </button>
+                    <button data-tab="county" class="tab-button py-2 px-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition duration-150 ease-in-out">
+                        Listările Agenților din Județ
+                    </button>
+                    <!-- Flex-grow pentru a împinge butonul la dreapta și a menține linia de sub tab-uri (L-AM MUTAT IN DIV SEPARAT) -->
+                    <div class="flex-grow"></div>
+                </div>
+
+                <!-- Buton Adăugare -->
+                <button id="add-property-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ml-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1 -mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Adaugă Proprietate Nouă
+                </button>
+            </div>
+            
+            <!-- BARĂ VIZUALĂ DE SEPARARE A INFORMAȚIILOR (OPȚIONALĂ - DAR PĂSTRĂM DIVIZIUNEA VIZUALĂ) -->
+            <div class="border-b border-gray-200 -mt-3 mb-6"></div>
+
+
+            <!-- Antet Coloane (Acum cu Dropdown-uri de Filtrare) -->
+            <div class="property-grid grid-header hidden lg:grid">
+                <!-- Status Filter Dropdown -->
+                <div class="text-sm header-dropdown-container" data-filter-key="status">
+                    Status
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    <div class="header-dropdown-content" onclick="event.stopPropagation()">
+                        <!-- Status Checkboxes will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Poza Header -->
+                <div class="text-sm">Poza (160x90)</div>
+
+                <!-- Tip/Tranzacție Filter Dropdown -->
+                <div class="text-sm header-dropdown-container" data-filter-key="type_transaction">
+                    Tip / Tranzacție
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    <div class="header-dropdown-content" onclick="event.stopPropagation()">
+                        <div class="mb-2"><label class="block text-sm font-medium text-gray-700 mb-1">Tip</label><select id="filter-type" class="search-field py-1"><option value="">Toate Tipurile</option><option value="Apartament">Apartament</option><option value="Casă">Casă / Vilă</option><option value="Teren">Teren</option><option value="Birou">Birou</option></select></div>
+                        <div class="mb-2"><label class="block text-sm font-medium text-gray-700 mb-1">Tranzacție</label><select id="filter-transaction" class="search-field py-1"><option value="">Toate Tranzacțiile</option><option value="Vânzare">Vânzare</option><option value="Închiriere">Închiriere</option></select></div>
+                        <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg text-sm w-full mt-2" onclick="filterAndRenderProperties()">Aplică</button>
+                    </div>
+                </div>
+
+                <!-- Caracteristici Header (LG ONLY) -->
+                <div class="text-sm lg-only-col">Caracteristici Tehnice</div>
+
+                <!-- Adresa Filter Dropdown (LG ONLY) -->
+                <div class="text-sm lg-only-col header-dropdown-container" data-filter-key="location">
+                    Adresa Completă
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    <div class="header-dropdown-content" onclick="event.stopPropagation()">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Caută Locație</label>
+                        <input type="text" id="filter-location" placeholder="Oraș, Zonă..." class="search-field py-1">
+                        <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg text-sm w-full mt-2" onclick="filterAndRenderProperties()">Aplică</button>
+                    </div>
+                </div>
+
+                <!-- Preț/Comision Filter Dropdown -->
+                <div class="text-sm header-dropdown-container" data-filter-key="price">
+                    Preț / Comisioane
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    <div class="header-dropdown-content" onclick="event.stopPropagation()">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preț Min (€)</label>
+                        <input type="number" id="filter-price-min" placeholder="0" class="search-field py-1 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preț Max (€)</label>
+                        <input type="number" id="filter-price-max" placeholder="500000" class="search-field py-1">
+                        <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded-lg text-sm w-full mt-2" onclick="filterAndRenderProperties()">Aplică</button>
+                    </div>
+                </div>
+
+                <!-- Portaluri Header (LG ONLY) -->
+                <div class="text-sm lg-only-col">Portaluri API</div>
+            </div>
+
+            <!-- Proprietățile vor fi injectate aici -->
+            <div id="property-list-container">
+                <p id="loading-message" class="col-span-full text-center text-gray-500">Se încarcă proprietățile...</p>
+            </div>
+            <p id="no-results" class="col-span-full text-center text-gray-500 hidden mt-4">Nu au fost găsite proprietăți care să corespundă filtrelor.</p>
+        </div>
+    </div>
+
+    <!-- Modala pentru Adăugare/Editare Proprietate - RĂMASĂ PENTRU ADD (ROW CLICK FACE INLINE EDIT) -->
+    <div id="edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 transition duration-300 invisible opacity-0 z-50">
+        <div class="bg-white w-full max-w-4xl p-6 rounded-xl shadow-2xl relative transform transition-all scale-100 h-[90vh] overflow-y-auto">
+            <h3 id="modal-title" class="text-2xl font-bold mb-4 text-gray-800">Adaugă Proprietate</h3>
+            
+            <!-- Buton Închidere Modala -->
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <!-- Formular Detalii Proprietate (fără submit real) -->
+            <!-- Acest formular rămâne pentru butonul 'Adaugă Proprietate Nouă' -->
+            <form id="property-form">
+                <input type="hidden" id="property-id">
+
+                <!-- GRUP 1: Status & Titlu -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div class="md:col-span-1">
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status Proprietate</label>
+                        <select id="status" required class="search-field">
+                            <option value="Incomplet" class="text-blue-700">Incomplet (Redactare)</option>
+                            <option value="În lucru" class="text-yellow-700">În lucru (Verificare)</option>
+                            <option value="Activ" class="text-green-700">Activ (Publicat)</option>
+                            <option value="Tranzacționat" class="text-red-700">Tranzacționat (Vândut)</option>
+                            <option value="Retras" class="text-gray-700">Retras (Anulat)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Titlu Proprietate</label>
+                        <input type="text" id="title" required class="search-field" placeholder="Apartament 2 Camere Zona Centrală">
+                    </div>
+                </div>
+                <!-- ... Restul câmpurilor din modală ... -->
+                <div class="grid grid-cols-4 gap-4 mb-4">
+                    <div><label for="modal-property-type" class="block text-sm font-medium text-gray-700 mb-1">Tip</label><select id="modal-property-type" required class="search-field"><option value="Apartament">Apartament</option><option value="Casă">Casă / Vilă</option><option value="Teren">Teren</option><option value="Birou">Birou</option></select></div>
+                    <div><label for="modal-transaction-type" class="block text-sm font-medium text-gray-700 mb-1">Tranzacție</label><select id="modal-transaction-type" required class="search-field"><option value="Vânzare">Vânzare</option><option value="Închiriere">Închiriere</option></select></div>
+                    <div><label for="rooms" class="block text-sm font-medium text-gray-700 mb-1">Nr. Camere</label><input type="number" id="rooms" required class="search-field" placeholder="2" min="1"></div>
+                    <div><label for="yearBuilt" class="block text-sm font-medium text-gray-700 mb-1">An Construcție</label><input type="number" id="yearBuilt" class="search-field" placeholder="2010" min="1900" max="2099"></div>
+                </div>
+                <div class="grid grid-cols-4 gap-4 mb-4">
+                    <div><label for="area" class="block text-sm font-medium text-gray-700 mb-1">Suprafață Utila (mp)</label><input type="number" id="area" required class="search-field" placeholder="55" min="1"></div>
+                    <div><label for="floor" class="block text-sm font-medium text-gray-700 mb-1">Etaj</label><input type="number" id="floor" class="search-field" placeholder="3" min="-1" max="100"></div>
+                    <div class="col-span-2"><label for="addressExact" class="block text-sm font-medium text-gray-700 mb-1">Adresă Exactă (Strada, Nr.)</label><input type="text" id="addressExact" required class="search-field" placeholder="Str. Eroilor, Nr. 15"></div>
+                </div>
+                <div class="grid grid-cols-4 gap-4 mb-4">
+                    <div><label for="zone" class="block text-sm font-medium text-gray-700 mb-1">Zonă / Cartier</label><input type="text" id="zone" class="search-field" placeholder="Ultracentrală"></div>
+                    <div><label for="modal-location" class="block text-sm font-medium text-gray-700 mb-1">Oraș (Locație)</label><input type="text" id="modal-location" required class="search-field" placeholder="Cluj-Napoca"></div>
+                    <div><label for="county" class="block text-sm font-medium text-gray-700 mb-1">Județ</label><input type="text" id="county" class="search-field" placeholder="Cluj"></div>
+                    <div><label for="country" class="block text-sm font-medium text-gray-700 mb-1">Țară</label><input type="text" id="country" required class="search-field" value="România"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 mb-4 border-t pt-4">
+                    <div><label for="price" class="block text-sm font-medium text-gray-700 mb-1">Preț Promovare (€)</label><input type="number" id="price" required class="search-field" placeholder="120000" min="0"></div>
+                    <div><label for="commissionPercent" class="block text-sm font-medium text-gray-700 mb-1">Comision Propriu (%)</label><input type="number" id="commissionPercent" required class="search-field" placeholder="3" min="0" max="10"></div>
+                    <div><label for="collaborationCommission" class="block text-sm font-medium text-gray-700 mb-1">Comision Colaborare (%)</label><input type="number" id="collaborationCommission" class="search-field" placeholder="1.5" min="0" max="10"></div>
+                </div>
+                
+                <!-- GRUP 6: Portaluri și Imagine -->
+                <div class="grid grid-cols-3 gap-4 mb-6 border-t pt-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Portaluri de Publicare (API)</label>
+                        <div id="portal-checkboxes" class="flex flex-wrap gap-4">
+                            <label class="flex items-center"><input type="checkbox" name="portal" value="Imobiliare.ro" class="mr-2"> Imobiliare.ro</label>
+                            <label class="flex items-center"><input type="checkbox" name="portal" value="Storia" class="mr-2"> Storia</label>
+                            <label class="flex items-center"><input type="checkbox" name="portal" value="Olimpia" class="mr-2"> Olimpia</label>
+                            <label class="flex items-center"><input type="checkbox" name="portal" value="Publi24" class="mr-2"> Publi24</label>
+                        </div>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="mainImage" class="block text-sm font-medium text-gray-700 mb-1">Link Poză Principală</label>
+                        <input type="text" id="mainImage" class="search-field" placeholder="URL imagine (ex: placehold.co/160x90)">
+                    </div>
+                </div>
+
+                <!-- Rând 7: Descriere completă -->
+                <div class="mb-6">
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Descriere</label>
+                    <textarea id="description" rows="3" class="search-field resize-none" placeholder="Detalii complete despre proprietate..."></textarea>
+                </div>
+                
+                <!-- Mesaje de eroare/succes (Mockup) -->
+                <p id="modal-message" class="text-sm font-medium text-green-600 mb-4 hidden">Proprietate salvată (Mockup)!</p>
+
+                <!-- Butoane de Acțiune (fără submit real) -->
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="delete-property-btn" class="hidden bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                        Șterge Proprietatea (Mock)
+                    </button>
+                    <button type="button" id="save-property-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                        Salvează Proprietatea (Mock)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Logica UI/UX (Fără Firebase) -->
+    <script>
+        // ========================================================================================================
+        // 1. DATE MOCKUP ȘI CONFIGURARE
+        
+        const STATUS_OPTIONS = ['Incomplet', 'În lucru', 'Activ', 'Tranzacționat', 'Retras'];
+        const PROPERTY_TYPES = ['Apartament', 'Casă', 'Teren', 'Birou'];
+        const TRANSACTION_TYPES = ['Vânzare', 'Închiriere'];
+        
+        let activeFilters = {
+            status: new Set(STATUS_OPTIONS),
+            type: new Set(PROPERTY_TYPES),
+            transaction: new Set(TRANSACTION_TYPES),
+            location: '', // text search
+            priceMin: 0,
+            priceMax: Infinity
+        };
+        
+        let activeTab = 'my'; // Tab-ul implicit: Listările Mele
+
+        // NOTĂ: Proprietățile au acum un camp 'ownerType' ('me', 'office', 'county') pentru a simula filtrarea pe tab-uri.
+        const MOCKUP_PROPERTIES = [
+            // ====================================================================================================
+            // Listările Mele (ownerType: 'me') - 7 Proprietăți
+            // ====================================================================================================
+            { id: 'p1', status: 'Activ', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 2 cam. Ultra-central, Et. 3', location: 'Cluj-Napoca', zone: 'Ultracentrală', county: 'Cluj', country: 'România', price: 120000, commissionPercent: 3, collaborationCommission: 1.5, commissionValue: 3600, area: 55, rooms: 2, floor: 3, yearBuilt: 1985, description: 'Apartament excelent renovat, vedere panoramică.', portals: ['Imobiliare.ro', 'Storia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Eroilor, Nr. 15', ownerType: 'me' },
+            { id: 'p3', status: 'În lucru', type: 'Teren', transaction: 'Vânzare', title: 'Teren intravilan 800mp', location: 'Gilău', zone: 'Zona Industrială', county: 'Cluj', country: 'România', price: 80000, commissionPercent: 4, collaborationCommission: 2.0, commissionValue: 3200, area: 800, rooms: 0, floor: 0, yearBuilt: 0, description: 'Teren ideal pentru depozit sau hală de producție.', portals: ['Storia'], mainImage: 'https://placehold.co/160x90/f97316/ffffff?text=LUCRU', addressExact: 'DJ107A, km 5', ownerType: 'me' },
+            { id: 'p7', status: 'Incomplet', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 3 cam. Mărăști, de renovat', location: 'Cluj-Napoca', zone: 'Mărăști', county: 'Cluj', country: 'România', price: 95000, commissionPercent: 3.5, collaborationCommission: 1.0, commissionValue: 3325, area: 70, rooms: 3, floor: 4, yearBuilt: 1978, description: 'Necesită renovare completă, potențial mare.', portals: [], mainImage: 'https://placehold.co/160x90/f59e0b/ffffff?text=INCOMPL', addressExact: 'Str. Aurel Vlaicu, Bl. 10', ownerType: 'me' },
+            // Adăugiri
+            { id: 'p10', status: 'Activ', type: 'Apartament', transaction: 'Închiriere', title: 'Studio modern, Bloc Nou', location: 'Cluj-Napoca', zone: 'Bună Ziua', county: 'Cluj', country: 'România', price: 400, commissionPercent: 100, collaborationCommission: 50, commissionValue: 400, area: 40, rooms: 1, floor: 5, yearBuilt: 2022, description: 'Studio complet mobilat și utilat, disponibil imediat.', portals: ['Imobiliare.ro', 'Publi24'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Fabricii', ownerType: 'me' },
+            { id: 'p11', status: 'În lucru', type: 'Casă', transaction: 'Vânzare', title: 'Casă 5 cam. Florești, de finisat', location: 'Florești', zone: 'Cetate', county: 'Cluj', country: 'România', price: 180000, commissionPercent: 2.5, collaborationCommission: 1.5, commissionValue: 4500, area: 150, rooms: 5, floor: 1, yearBuilt: 2020, description: 'Casă P+E, interior la gri, exterior finisat.', portals: ['Storia'], mainImage: 'https://placehold.co/160x90/f97316/ffffff?text=LUCRU', addressExact: 'Str. Florilor, Nr. 5', ownerType: 'me' },
+            { id: 'p12', status: 'Activ', type: 'Teren', transaction: 'Vânzare', title: 'Teren Construibil 1200mp, Gilău', location: 'Gilău', zone: 'Lângă Pădure', county: 'Cluj', country: 'România', price: 100000, commissionPercent: 3, collaborationCommission: 1.5, commissionValue: 3000, area: 1200, rooms: 0, floor: 0, yearBuilt: 0, description: 'Teren cu PUZ aprobat pentru locuințe.', portals: ['Olimpia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Drumul Principal', ownerType: 'me' },
+            { id: 'p13', status: 'Tranzacționat', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 2 cam. Gheorgheni, vandut rapid', location: 'Cluj-Napoca', zone: 'Gheorgheni', county: 'Cluj', country: 'România', price: 110000, commissionPercent: 3, collaborationCommission: 0.5, commissionValue: 3300, area: 50, rooms: 2, floor: 8, yearBuilt: 1990, description: 'Tranzacționat în 7 zile.', portals: ['Imobiliare.ro'], mainImage: 'https://placehold.co/160x90/ef4444/ffffff?text=VANDUT', addressExact: 'Str. Liviu Rebreanu', ownerType: 'me' },
+            
+            // ====================================================================================================
+            // Listările Biroului (ownerType: 'office') - 7 Proprietăți
+            // ====================================================================================================
+            { id: 'p2', status: 'Tranzacționat', type: 'Casă', transaction: 'Vânzare', title: 'Casă 4 cam. curte 500mp', location: 'Florești', zone: 'Centru Florești', county: 'Cluj', country: 'România', price: 210000, commissionPercent: 2.5, collaborationCommission: 1.0, commissionValue: 5250, area: 120, rooms: 4, floor: 0, yearBuilt: 2018, description: 'Casă individuală, finisaje premium, mutare imediată.', portals: ['Imobiliare.ro'], mainImage: 'https://placehold.co/160x90/ef4444/ffffff?text=VANDUT', addressExact: 'Str. Principală, Nr. 200', ownerType: 'office' },
+            { id: 'p5', status: 'Retras', type: 'Birou', transaction: 'Închiriere', title: 'Spațiu Birouri 100mp', location: 'București', zone: 'Piata Victoriei', county: 'București', country: 'România', price: 1200, commissionPercent: 100, collaborationCommission: 50, commissionValue: 1200, area: 100, rooms: 3, floor: 1, yearBuilt: 2005, description: 'Spațiu de birouri open-space, ideal pentru IT.', portals: [], mainImage: 'https://placehold.co/160x90/6b7280/ffffff?text=RETRAS', addressExact: 'Bd. Iancu de Hunedoara, Nr. 4', ownerType: 'office' },
+            { id: 'p8', status: 'Activ', type: 'Apartament', transaction: 'Închiriere', title: 'Garsonieră Centrală, Mobilată', location: 'Cluj-Napoca', zone: 'Central', county: 'Cluj', country: 'România', price: 350, commissionPercent: 100, collaborationCommission: 50, commissionValue: 350, area: 35, rooms: 1, floor: 2, yearBuilt: 2000, description: 'Garsonieră excelentă pentru studenți.', portals: ['Publi24'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Bd. 21 Decembrie 1989', ownerType: 'office' },
+            // Adăugiri
+            { id: 'p14', status: 'Activ', type: 'Birou', transaction: 'Închiriere', title: 'Clădire Birouri Clasa A, 500mp', location: 'București', zone: 'Aviației', county: 'București', country: 'România', price: 8000, commissionPercent: 100, collaborationCommission: 50, commissionValue: 8000, area: 500, rooms: 10, floor: 3, yearBuilt: 2015, description: 'Spațiu modern, etaj întreg, parcare inclusă.', portals: ['Imobiliare.ro', 'Storia', 'Olimpia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Unirii', ownerType: 'office' },
+            { id: 'p15', status: 'Incomplet', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 4 cam. de lux, Timișoara', location: 'Timișoara', zone: 'Central', county: 'Timiș', country: 'România', price: 250000, commissionPercent: 2.0, collaborationCommission: 1.0, commissionValue: 5000, area: 100, rooms: 4, floor: 7, yearBuilt: 2019, description: 'Apartament finisat premium, descriere în așteptare.', portals: ['Imobiliare.ro'], mainImage: 'https://placehold.co/160x90/f59e0b/ffffff?text=INCOMPL', addressExact: 'Bd. Revoluției', ownerType: 'office' },
+            { id: 'p16', status: 'Retras', type: 'Casă', transaction: 'Vânzare', title: 'Casă veche de renovat, Sibiu', location: 'Sibiu', zone: 'Turnișor', county: 'Sibiu', country: 'România', price: 90000, commissionPercent: 3, collaborationCommission: 1.5, commissionValue: 2700, area: 80, rooms: 3, floor: 0, yearBuilt: 1950, description: 'Retrasă temporar de la vânzare, necesită renovare.', portals: [], mainImage: 'https://placehold.co/160x90/6b7280/ffffff?text=RETRAS', addressExact: 'Str. Ocnei', ownerType: 'office' },
+            { id: 'p17', status: 'Activ', type: 'Apartament', transaction: 'Închiriere', title: 'Apartament 2 cam, Zorilor', location: 'Cluj-Napoca', zone: 'Zorilor', county: 'Cluj', country: 'România', price: 550, commissionPercent: 100, collaborationCommission: 50, commissionValue: 550, area: 50, rooms: 2, floor: 4, yearBuilt: 1988, description: 'Apartament mobilat și utilat complet.', portals: ['Storia', 'Publi24'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Observatorului', ownerType: 'office' },
+
+            // ====================================================================================================
+            // Listările Agenților din Județ (ownerType: 'county') - 7 Proprietăți
+            // ====================================================================================================
+            { id: 'p4', status: 'Activ', type: 'Apartament', transaction: 'Închiriere', title: 'Studio modern, Bloc Nou', location: 'Timișoara', zone: 'Zona Iulius Mall', county: 'Timiș', country: 'România', price: 400, commissionPercent: 50, collaborationCommission: 50, commissionValue: 200, area: 40, rooms: 1, floor: 5, yearBuilt: 2021, description: 'Studio complet mobilat și utilat, disponibil imediat.', portals: ['Imobiliare.ro', 'Olimpia', 'Publi24'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Calea Aradului, Nr. 5', ownerType: 'county' },
+            { id: 'p6', status: 'Activ', type: 'Casă', transaction: 'Vânzare', title: 'Vilă P+1, 5 camere, Grădină', location: 'Iași', zone: 'Copou', county: 'Iași', country: 'România', price: 350000, commissionPercent: 2.0, collaborationCommission: 1.0, commissionValue: 7000, area: 180, rooms: 5, floor: 1, yearBuilt: 2015, description: 'Vilă de lux cu piscină interioară.', portals: ['Imobiliare.ro', 'Olimpia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Sărăriei, Nr. 12', ownerType: 'county' },
+            { id: 'p9', status: 'Incomplet', type: 'Teren', transaction: 'Vânzare', title: 'Teren Construibil Sibiu', location: 'Sibiu', zone: 'Calea Cisnădiei', county: 'Sibiu', country: 'România', price: 50000, commissionPercent: 4, collaborationCommission: 2, commissionValue: 2000, area: 500, rooms: 0, floor: 0, yearBuilt: 0, description: 'Teren ideal pentru casă P+1.', portals: [], mainImage: 'https://placehold.co/160x90/f59e0b/ffffff?text=INCOMPL', addressExact: 'Str. Luncii', ownerType: 'county' },
+            // Adăugiri
+            { id: 'p18', status: 'Activ', type: 'Teren', transaction: 'Vânzare', title: 'Teren 700mp, Brașov', location: 'Brașov', zone: 'Stupini', county: 'Brașov', country: 'România', price: 75000, commissionPercent: 3.5, collaborationCommission: 1.5, commissionValue: 2625, area: 700, rooms: 0, floor: 0, yearBuilt: 0, description: 'Teren intravilan, utilități aproape.', portals: ['Storia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Stupinii, Nr. 10', ownerType: 'county' },
+            { id: 'p19', status: 'În lucru', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 3 cam. Constanța, vedere mare', location: 'Constanța', zone: 'Faleză Nord', county: 'Constanța', country: 'România', price: 150000, commissionPercent: 2.5, collaborationCommission: 1.0, commissionValue: 3750, area: 85, rooms: 3, floor: 9, yearBuilt: 2010, description: 'Bloc nou, se așteaptă documentația finală.', portals: ['Imobiliare.ro'], mainImage: 'https://placehold.co/160x90/f97316/ffffff?text=LUCRU', addressExact: 'Bd. Mamaia, Bl. D5', ownerType: 'county' },
+            { id: 'p20', status: 'Tranzacționat', type: 'Casă', transaction: 'Vânzare', title: 'Vilă tip Duplex, Oradea', location: 'Oradea', zone: 'Nufărul', county: 'Bihor', country: 'România', price: 140000, commissionPercent: 3, collaborationCommission: 1.5, commissionValue: 4200, area: 110, rooms: 4, floor: 1, yearBuilt: 2017, description: 'Vândută în colaborare cu agent local.', portals: ['Olimpia', 'Publi24'], mainImage: 'https://placehold.co/160x90/ef4444/ffffff?text=VANDUT', addressExact: 'Str. Salcâmilor, Nr. 3', ownerType: 'county' },
+            { id: 'p21', status: 'Activ', type: 'Birou', transaction: 'Închiriere', title: 'Spațiu Comercial 80mp, Iași', location: 'Iași', zone: 'Centru Civic', county: 'Iași', country: 'România', price: 900, commissionPercent: 100, collaborationCommission: 50, commissionValue: 900, area: 80, rooms: 2, floor: 0, yearBuilt: 1995, description: 'Ideal pentru clinică sau magazin, vad bun.', portals: ['Imobiliare.ro', 'Storia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Bd. Ștefan cel Mare', ownerType: 'county' },
+        ];
+
+
+        // 2. ELEMENTELE DOM
+        const propertyListContainer = document.getElementById('property-list-container');
+        const propertyCountSpan = document.getElementById('property-count');
+        const loadingMessage = document.getElementById('loading-message');
+        const noResultsMessage = document.getElementById('no-results');
+        const mainTabsContainer = document.getElementById('main-tabs');
+        
+        const modal = document.getElementById('edit-modal'); // Păstrăm referința pentru butonul 'Adaugă'
+        const modalTitle = document.getElementById('modal-title');
+        const propertyForm = document.getElementById('property-form');
+        const propertyIdInput = document.getElementById('property-id');
+        const deleteBtn = document.getElementById('delete-property-btn');
+        const saveBtn = document.getElementById('save-property-btn');
+        const portalCheckboxesContainer = document.getElementById('portal-checkboxes');
+        
+        // Câmpuri Editare In-line
+        const FIELD_MAP = [
+            { id: 'inline-status', key: 'status', label: 'Status' },
+            { id: 'inline-title', key: 'title', label: 'Titlu' },
+            { id: 'inline-type', key: 'type', label: 'Tip' },
+            { id: 'inline-transaction', key: 'transaction', label: 'Tranzacție' },
+            { id: 'inline-price', key: 'price', label: 'Preț (€)' },
+            { id: 'inline-area', key: 'area', label: 'Suprafață (mp)' },
+            { id: 'inline-rooms', key: 'rooms', label: 'Camere' },
+            { id: 'inline-floor', key: 'floor', label: 'Etaj' },
+            { id: 'inline-yearBuilt', key: 'yearBuilt', label: 'An' },
+            { id: 'inline-addressExact', key: 'addressExact', label: 'Adresă Exactă' },
+            { id: 'inline-zone', key: 'zone', label: 'Zonă' },
+            { id: 'inline-location', key: 'location', label: 'Oraș' },
+            { id: 'inline-commissionPercent', key: 'commissionPercent', label: 'Comision (%)' },
+            { id: 'inline-description', key: 'description', label: 'Descriere' },
+        ];
+
+
+        // 3. LOGICA MODALEI (UI/UX) - PĂSTRATĂ PENTRU ADD-PROPERTY BUTTON
+        
+        /**
+         * Deschide modala și populează cu date mockup.
+         */
+        function openModal(property = null) {
+            if (property) {
+                // Dacă se încearcă deschiderea modalei pentru editare, ignorăm (Editarea se face INLINE)
+                console.error('Modal opened for editing, but inline edit is enabled. Ignoring edit action.');
+                return;
+            }
+            
+            // Logica pentru ADD
+            propertyForm.reset();
+            document.getElementById('modal-message').classList.add('hidden');
+            deleteBtn.classList.add('hidden');
+            portalCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            modalTitle.textContent = "Adaugă Proprietate Nouă";
+            propertyIdInput.value = '';
+            document.getElementById('status').value = 'Incomplet';
+
+            modal.classList.remove('invisible', 'opacity-0');
+            modal.classList.add('visible', 'opacity-100');
+        }
+
+        /**
+         * Închide modala.
+         */
+        function closeModal() {
+            modal.classList.remove('visible', 'opacity-100');
+            modal.classList.add('invisible', 'opacity-0');
+        }
+
+        /**
+         * Simulează salvarea/ștergerea și afișează mesajul UI.
+         */
+        function handleModalAction(actionType) {
+            const messageEl = document.getElementById('modal-message');
+            messageEl.textContent = `Proprietate ${actionType === 'save' ? 'salvată' : 'ștearsă'} (Acțiune Mockup)!`;
+            messageEl.classList.remove('hidden');
+            
+            // Simulează o mică întârziere pentru UX
+            setTimeout(() => {
+                closeModal();
+            }, 1500);
+        }
+        
+        // 4. LOGICA DE FILTRARE (UI) ȘI AFIȘARE
+        
+        /**
+         * Inițializarea checkbox-urilor de status în dropdown-ul din header.
+         */
+        function setupDropdowns() {
+            // Logica pentru Status
+            const statusDropdownContent = document.querySelector('[data-filter-key="status"] .header-dropdown-content');
+            statusDropdownContent.innerHTML = '';
+            STATUS_OPTIONS.forEach(status => {
+                const isChecked = activeFilters.status.has(status);
+                const label = document.createElement('label');
+                label.className = "flex items-center text-sm text-gray-700 cursor-pointer hover:text-indigo-600 transition mb-1";
+                label.innerHTML = `
+                    <input type="checkbox" value="${status}" ${isChecked ? 'checked' : ''} class="status-filter-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-2">
+                    ${status}
+                `;
+                statusDropdownContent.appendChild(label);
+            });
+            
+            document.querySelectorAll('.status-filter-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    const status = e.target.value;
+                    if (e.target.checked) {
+                        activeFilters.status.add(status);
+                    } else {
+                        activeFilters.status.delete(status);
+                    }
+                    filterAndRenderProperties();
+                });
+            });
+            
+            // Adaugă ascultători pentru Tip & Tranzacție
+            document.getElementById('filter-type').addEventListener('change', (e) => {
+                const type = e.target.value;
+                activeFilters.type = type ? new Set([type]) : new Set(PROPERTY_TYPES);
+            });
+            document.getElementById('filter-transaction').addEventListener('change', (e) => {
+                const transaction = e.target.value;
+                activeFilters.transaction = transaction ? new Set([transaction]) : new Set(TRANSACTION_TYPES);
+            });
+            
+            // Adaugă ascultători pentru Locație
+            document.getElementById('filter-location').addEventListener('input', (e) => {
+                activeFilters.location = e.target.value.trim().toLowerCase();
+            });
+            
+            // Adaugă ascultători pentru Preț
+            document.getElementById('filter-price-min').addEventListener('input', (e) => {
+                activeFilters.priceMin = parseFloat(e.target.value) || 0;
+            });
+            document.getElementById('filter-price-max').addEventListener('input', (e) => {
+                activeFilters.priceMax = parseFloat(e.target.value) || Infinity;
+            });
+            
+            // Toggle dropdowns
+            document.querySelectorAll('.header-dropdown-container').forEach(dd => {
+                dd.addEventListener('click', (e) => {
+                    // Închide toate celelalte dropdown-uri
+                    document.querySelectorAll('.header-dropdown-container').forEach(otherDd => {
+                        if (otherDd !== dd) {
+                            otherDd.classList.remove('open');
+                        }
+                    });
+                    // Toggle dropdown-ul curent
+                    dd.classList.toggle('open');
+                });
+            });
+            // Închide dropdown-urile la click în afara lor
+            window.addEventListener('click', (e) => {
+                if (!e.target.closest('.header-dropdown-container')) {
+                    document.querySelectorAll('.header-dropdown-container').forEach(dd => {
+                        dd.classList.remove('open');
+                    });
+                }
+            });
+        }
+        
+        /**
+         * Schimbă tab-ul activ și re-renderizează proprietățile (mockup).
+         */
+        function setActiveTab(tabKey) {
+            if (activeTab === tabKey) return;
+
+            activeTab = tabKey;
+            
+            // Actualizare UI tab-uri
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'text-indigo-600', 'bg-indigo-50/50');
+                btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                
+                if (btn.dataset.tab === tabKey) {
+                    btn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    btn.classList.add('border-indigo-600', 'text-indigo-600', 'bg-indigo-50/50');
+                }
+            });
+
+            // Reîncărcăm lista pentru a simula filtrarea bazată pe tab-ul nou selectat
+            filterAndRenderProperties(); 
+        }
+        
+        /**
+         * Aplică toate filtrele pe datele mockup și re-renderizează lista.
+         */
+        function filterAndRenderProperties() {
+            loadingMessage.classList.add('hidden');
+            
+            // 1. Filtrare inițială bazată pe TAB (ownerType)
+            let initialFilter;
+            switch (activeTab) {
+                case 'my':
+                    // Listarile Mele
+                    initialFilter = MOCKUP_PROPERTIES.filter(p => p.ownerType === 'me');
+                    break;
+                case 'office':
+                    // Listarile Biroului
+                    initialFilter = MOCKUP_PROPERTIES.filter(p => p.ownerType === 'office');
+                    break;
+                case 'county':
+                    // Listarile Agenților din Județ
+                    initialFilter = MOCKUP_PROPERTIES.filter(p => p.ownerType === 'county');
+                    break;
+                default:
+                    initialFilter = MOCKUP_PROPERTIES;
+            }
+
+
+            // 2. Aplicarea filtrelor avansate (Status, Tip, Locație, Preț) pe lista filtrată de tab.
+            const filteredProperties = initialFilter.filter(p => {
+                // Filtru Status
+                const statusMatch = activeFilters.status.has(p.status);
+                
+                // Filtru Tip
+                const typeMatch = activeFilters.type.has(p.type);
+                
+                // Filtru Tranzacție
+                const transactionMatch = activeFilters.transaction.has(p.transaction);
+                
+                // Filtru Locație (pe location, zone sau addressExact)
+                const locationMatch = !activeFilters.location || 
+                                      (p.location && p.location.toLowerCase().includes(activeFilters.location)) || 
+                                      (p.zone && p.zone.toLowerCase().includes(activeFilters.location)) || 
+                                      (p.addressExact && p.addressExact.toLowerCase().includes(activeFilters.location));
+                
+                // Filtru Preț
+                const priceMatch = p.price >= activeFilters.priceMin && p.price <= activeFilters.priceMax;
+
+                return statusMatch && typeMatch && transactionMatch && locationMatch && priceMatch;
+            });
+            
+            renderProperties(filteredProperties);
+        }
+        
+        /**
+         * Generează HTML-ul pentru formularul de editare in-line
+         */
+        function generateInlineEditForm(property) {
+            let formHtml = `
+                <div class="inline-edit-form p-4 lg:p-6" data-id="${property.id}">
+                    <h4 class="text-xl font-bold text-gray-700 mb-4">Editare Rapidă: ${property.title}</h4>
+                    <form class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        <input type="hidden" name="property-id" value="${property.id}">
+                        
+                        <!-- Status -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select name="status" class="search-field py-2" data-key="status" required>
+                                ${STATUS_OPTIONS.map(s => `<option value="${s}" ${s === property.status ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <!-- Titlu -->
+                        <div class="col-span-4 md:col-span-3 lg:col-span-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Titlu</label>
+                            <input type="text" name="title" class="search-field py-2" data-key="title" value="${property.title || ''}" required>
+                        </div>
+                        
+                        <!-- Tip / Tranzacție -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tip</label>
+                            <select name="type" class="search-field py-2" data-key="type" required>
+                                ${PROPERTY_TYPES.map(t => `<option value="${t}" ${t === property.type ? 'selected' : ''}>${t}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tranzacție</label>
+                            <select name="transaction" class="search-field py-2" data-key="transaction" required>
+                                ${TRANSACTION_TYPES.map(t => `<option value="${t}" ${t === property.transaction ? 'selected' : ''}>${t}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <!-- Preț -->
+                        <div class="col-span-2 md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Preț (€)</label>
+                            <input type="number" name="price" class="search-field py-2" data-key="price" value="${property.price || 0}" required>
+                        </div>
+                        
+                        <!-- Suprafață / Camere -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Suprafață (mp)</label>
+                            <input type="number" name="area" class="search-field py-2" data-key="area" value="${property.area || 0}" required>
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nr. Camere</label>
+                            <input type="number" name="rooms" class="search-field py-2" data-key="rooms" value="${property.rooms || 0}" required>
+                        </div>
+                        
+                        <!-- Adresă Exactă -->
+                        <div class="col-span-4 lg:col-span-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Adresă Exactă</label>
+                            <input type="text" name="addressExact" class="search-field py-2" data-key="addressExact" value="${property.addressExact || ''}" required>
+                        </div>
+                        
+                        <!-- Descriere -->
+                        <div class="col-span-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Descriere</label>
+                            <textarea name="description" rows="2" class="search-field py-2 resize-none" data-key="description">${property.description || ''}</textarea>
+                        </div>
+                        
+                        <!-- Butoane de acțiune -->
+                        <div class="col-span-6 flex justify-end space-x-3 mt-4">
+                            <button type="button" class="inline-delete-btn bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200" data-id="${property.id}">
+                                Șterge (Mock)
+                            </button>
+                            <button type="button" class="inline-save-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200" data-id="${property.id}">
+                                Salvează (Mock)
+                            </button>
+                            <button type="button" class="inline-cancel-btn bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg transition duration-200">
+                                Anulează
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            return formHtml;
+        }
+
+
+        /**
+         * Afișează proprietățile filtrate în UI.
+         */
+        function renderProperties(properties) {
+            propertyListContainer.innerHTML = '';
+            // Mutăm actualizarea numărului doar pe tab-ul "Listările Mele" pentru a fi mai puțin distragător
+            if (activeTab === 'my') {
+                propertyCountSpan.textContent = properties.length;
+            } else {
+                propertyCountSpan.textContent = MOCKUP_PROPERTIES.filter(p => p.ownerType === activeTab).length;
+            }
+
+            if (properties.length === 0) {
+                noResultsMessage.classList.remove('hidden');
+                document.querySelector('.grid-header').classList.add('hidden');
+                return;
+            }
+            noResultsMessage.classList.add('hidden');
+            document.querySelector('.grid-header').classList.remove('hidden');
+
+            properties.forEach(property => {
+                const getStatusStyle = (status) => {
+                    switch (status) {
+                        case 'Activ': return 'bg-green-500/10 text-green-700 border-green-500';
+                        case 'În lucru': return 'bg-yellow-500/10 text-yellow-700 border-yellow-500';
+                        case 'Tranzacționat': return 'bg-red-500/10 text-red-700 border-red-500';
+                        case 'Retras': return 'bg-gray-500/10 text-gray-700 border-gray-500';
+                        case 'Incomplet': 
+                        default: return 'bg-blue-500/10 text-blue-700 border-blue-500';
+                    }
+                };
+                
+                // Calculele pentru comisioane (Mockup)
+                const commissionCalculated = property.commissionValue ? property.commissionValue.toLocaleString('ro-RO') : 'N/A';
+                const commissionPercentDisplay = property.commissionPercent ? `(${property.commissionPercent}%)` : '';
+                const collabCommissionDisplay = property.collaborationCommission ? `Colab. ${property.collaborationCommission}%` : 'Colab. N/A';
+                
+                const cardHtml = `
+                    <div class="property-grid grid-row" data-id="${property.id}">
+                        <!-- 1. Statusul Proprietății -->
+                        <div class="truncate pr-2">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full border ${getStatusStyle(property.status)}">
+                                ${property.status}
+                            </span>
+                        </div>
+
+                        <!-- 2. Imagine (160x90) -->
+                        <div class="flex items-center justify-center">
+                            <img src="${property.mainImage || 'https://placehold.co/160x90/cccccc/333333?text=N/A'}" 
+                                 onerror="this.onerror=null;this.src='https://placehold.co/160x90/cccccc/333333?text=N/A'" 
+                                 class="w-40 h-[90px] object-cover rounded-md shadow-md" alt="Poza principală">
+                        </div>
+
+                        <!-- 3. Tipul Proprietății / Tranzacție -->
+                        <div>
+                            <div class="font-medium text-gray-800 leading-tight">${property.type}</div>
+                            <div class="text-xs text-gray-500">${property.transaction}</div>
+                        </div>
+
+                        <!-- 4. Caracteristici Tehnice (LG ONLY) -->
+                        <div class="lg-only-col text-sm text-gray-600 space-y-0.5">
+                            <p class="truncate leading-none"><strong>${property.area || 0} mp</strong> | ${property.rooms || 0} Camere</p>
+                            <p class="truncate leading-none">Etaj: ${property.floor !== undefined ? property.floor : 'N/A'} | An: ${property.yearBuilt || 'N/A'}</p>
+                        </div>
+
+                        <!-- 5. Adresa Completă (LG ONLY) -->
+                        <div class="lg-only-col text-sm text-gray-600 space-y-0.5">
+                            <p class="font-medium leading-tight">${property.location}, ${property.county}</p>
+                            <p class="text-xs text-gray-500 truncate leading-tight">${property.addressExact || 'Adresă lipsă'}, ${property.zone || 'Zonă lipsă'}</p>
+                        </div>
+
+                        <!-- 6. Preț / Comisioane -->
+                        <div>
+                            <p class="text-lg font-bold text-indigo-600 leading-tight">${property.price.toLocaleString('ro-RO')} €</p>
+                            <p class="text-xs text-gray-600 mt-1 leading-tight">Comision: ${commissionCalculated} € ${commissionPercentDisplay}</p>
+                            <p class="text-xs text-blue-500 leading-tight">${collabCommissionDisplay}</p>
+                        </div>
+                        
+                        <!-- 7. Portaluri API (LG ONLY) - Afișate unul sub altul -->
+                        <div class="lg-only-col flex flex-col space-y-0.5">
+                            ${(property.portals || []).map(p => `<div class="flex items-center"><span class="h-3 w-3 inline-block mr-1 text-green-500">✓</span><span class="text-xs text-gray-700">${p}</span></div>`).join('')}
+                            ${(property.portals || []).length === 0 ? '<span class="text-xs text-gray-400">Niciun portal</span>' : ''}
+                        </div>
+                        
+                        <!-- Rând Editare In-line Ascuns -->
+                        ${generateInlineEditForm(property)}
+                    </div>
+                `;
+                propertyListContainer.insertAdjacentHTML('beforeend', cardHtml);
+            });
+            
+            // 5. INIȚIALIZARE ASCULTĂTORI RÂNDURI (Editare la Click)
+            document.querySelectorAll('.grid-row').forEach(row => {
+                const docId = row.dataset.id;
+                
+                row.addEventListener('click', () => {
+                     // Închide toate celelalte rânduri expandate
+                    document.querySelectorAll('.grid-row.expanded').forEach(otherRow => {
+                        if (otherRow !== row) {
+                            otherRow.classList.remove('expanded');
+                        }
+                    });
+                    // Toggle rândul curent
+                    row.classList.toggle('expanded');
+                    
+                    // Atașează handlere pentru butoane la fiecare expandare
+                    if (row.classList.contains('expanded')) {
+                        const propertyToEdit = MOCKUP_PROPERTIES.find(p => p.id === docId);
+                        const formContainer = row.querySelector('.inline-edit-form');
+                        
+                        // Handler Salvare (Mock)
+                        formContainer.querySelector('.inline-save-btn').onclick = (e) => {
+                            e.preventDefault();
+                            alert(`Proprietatea ${docId} salvată cu succes (Mockup)!`);
+                            row.classList.remove('expanded');
+                        };
+                        
+                        // Handler Ștergere (Mock)
+                        formContainer.querySelector('.inline-delete-btn').onclick = (e) => {
+                            e.preventDefault();
+                            alert(`Proprietatea ${docId} ștearsă cu succes (Mockup)!`);
+                            row.remove(); // Scoate vizual din listă
+                            // Trebuie să actualizăm și lista de proprietăți mockup dacă ar fi fost real. Aici doar re-renderizăm.
+                            filterAndRenderProperties();
+                        };
+                        
+                        // Handler Anulare
+                        formContainer.querySelector('.inline-cancel-btn').onclick = (e) => {
+                            e.preventDefault();
+                            row.classList.remove('expanded');
+                        };
+                    }
+                });
+            });
+        }
+        
+        // 6. HANDLERE DE EVENIMENTE
+
+        // 6.1. Acțiuni Modale (doar UX) - Păstrate pentru ADD
+        saveBtn.addEventListener('click', () => handleModalAction('save'));
+        deleteBtn.addEventListener('click', () => handleModalAction('delete'));
+        
+        document.getElementById('add-property-btn').addEventListener('click', () => openModal());
+        document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // 6.2. Filtrare - Acum e declanșată din dropdown-uri sau la input
+        
+        // 7. RULARE INIȚIALĂ
+        document.addEventListener('DOMContentLoaded', () => {
+            setupDropdowns();
+            
+            // Inițializare Ascultători Tab-uri
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    setActiveTab(e.target.dataset.tab);
+                });
+            });
+            
+            filterAndRenderProperties(); // Încarcă lista inițială de proprietăți (Listările Mele)
+        });
+
+    </script>
+</body>
+</html>
