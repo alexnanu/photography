@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Găsește un Agent Imobiliar</title>
+    <!-- Încarcă Tailwind CSS pentru o stilizare rapidă și elegant -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Asigură un font curat */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Stil de bază pentru câmpurile de input/select */
+        .search-field {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .search-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+            outline: none;
+        }
+
+        /* Stil pentru cardurile de agent */
+        .agent-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1), 0 5px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Stil pentru Rating (stele) */
+        .star-rating {
+            color: #fcd34d; /* galben */
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+	<!-- TOP MENU BAR – Fixed at the very top, works on all pages -->
+<div class="fixed inset-x-0 top-0 z-50">
+    <div class="bg-white shadow-lg border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="index.html" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center text-white font-bold text-xl">H</div>
+                        <span class="text-xl font-bold text-gray-800 hidden sm:block">Real Estate</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Contact Us</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Educational</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Profesionisti</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Analiza De Piata</a>
+                    <a href="index.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Buy</a>
+                    <a href="index.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Rent</a>
+                    <a href="profil.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Profilul meu</a>
+                    <a href="agenti.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Find an Agent</a>
+                    <a href="crm.html" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition shadow-md">Login</a>
+                </div>             
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- This tiny padding pushes your page content below the fixed menu -->
+<div class="pt-20"></div>
+
+
+    <main class="w-full max-w-6xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-6 border-b pb-2">
+            Găsește-ti Agentul Imobiliar
+        </h1>
+        <p class="text-gray-600 mb-8">
+            Explorează, filtrează și compară agenți pe baza recenziilor, experienței și tranzacțiilor finalizate.
+        </p>
+
+        <!-- Formular de Filtrare/Căutare (Similar cu index.html) -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-10">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Filtre de Căutare</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <!-- Căutare după Zonă/Oraș -->
+                <div class="col-span-1 sm:col-span-2">
+                    <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Zonă / Oraș</label>
+                    <input type="text" id="location" placeholder="Ex: Cluj-Napoca, Florești" class="search-field">
+                </div>
+                
+                <!-- Filtru după Specializare (Tip Proprietate) -->
+                <div>
+                    <label for="specialization" class="block text-sm font-medium text-gray-700 mb-1">Specializare</label>
+                    <select id="specialization" class="search-field">
+                        <option value="Toate">Toate</option>
+                        <option value="Rezidențial">Rezidențial</option>
+                        <option value="Comercial">Comercial</option>
+                        <option value="Terenuri">Terenuri</option>
+                    </select>
+                </div>
+
+                <!-- Buton de Căutare -->
+                <div class="flex items-end">
+                    <button id="search-button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors shadow-md">
+                        Căută Agenți
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secțiune Rezultate Căutare -->
+        <div id="agent-results" class="space-y-6">
+            <h2 id="results-title" class="text-2xl font-bold text-gray-800">Agenți de Top în Piață</h2>
+            <!-- Aici vor fi injectate cardurile de agent -->
+        </div>
+
+    </main>
+
+    <!-- Script JavaScript pentru date mock, logică de randare și căutare -->
+    <script type="text/javascript">
+        // Date Mock (simulare)
+        const mockAgents = [
+            {
+                id: 1,
+                name: "Andrei Popescu",
+                photoUrl: "https://placehold.co/100x100/4f46e5/ffffff?text=AP",
+                location: "Cluj-Napoca",
+                specialization: "Rezidențial",
+                transactions: 125,
+                experienceYears: 8,
+                rating: 4.9,
+                reviews: 95,
+                badge: "Top Rated"
+            },
+            {
+                id: 2,
+                name: "Ioana Munteanu",
+                photoUrl: "https://placehold.co/100x100/10b981/ffffff?text=IM",
+                location: "București",
+                specialization: "Comercial",
+                transactions: 54,
+                experienceYears: 4,
+                rating: 4.5,
+                reviews: 32,
+                badge: "Rising Star"
+            },
+            {
+                id: 3,
+                name: "Mihai Vasilescu",
+                photoUrl: "https://placehold.co/100x100/ef4444/ffffff?text=MV",
+                location: "Timișoara",
+                specialization: "Rezidențial",
+                transactions: 88,
+                experienceYears: 6,
+                rating: 4.7,
+                reviews: 71,
+                badge: ""
+            },
+            {
+                id: 4,
+                name: "Elena Georgescu",
+                photoUrl: "https://placehold.co/100x100/3b82f6/ffffff?text=EG",
+                location: "Cluj-Napoca",
+                specialization: "Terenuri",
+                transactions: 31,
+                experienceYears: 10,
+                rating: 5.0,
+                reviews: 45,
+                badge: "Expert Level"
+            },
+            {
+                id: 5,
+                name: "Cristian Dobre",
+                photoUrl: "https://placehold.co/100x100/fbbf24/ffffff?text=CD",
+                location: "București",
+                specialization: "Rezidențial",
+                transactions: 150,
+                experienceYears: 9,
+                rating: 4.8,
+                reviews: 110,
+                badge: "Top Performer"
+            },
+        ];
+
+        // Funcție pentru a genera stelele de rating
+        function generateStarRating(rating) {
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 !== 0;
+            const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+            let html = '';
+
+            // Stele pline
+            for (let i = 0; i < fullStars; i++) {
+                html += '<span class="star-rating text-lg">&#9733;</span>'; // Stea plină
+            }
+            // Jumătate de stea
+            if (halfStar) {
+                // Jumătate de stea (folosim o combinație de simboluri sau un caracter unicode)
+                html += '<span class="star-rating text-lg">★</span>'; // Simulare jumătate de stea sau stea plină
+            }
+            // Stele goale
+            for (let i = 0; i < emptyStars; i++) {
+                html += '<span class="text-gray-300 text-lg">&#9733;</span>'; // Stea goală
+            }
+
+            return html;
+        }
+
+        // Funcție pentru a crea cardul unui agent (similar cu createPropertyCard)
+        function createAgentCard(agent) {
+            const ratingHtml = generateStarRating(agent.rating);
+            const badgeHtml = agent.badge ? `<span class="absolute top-2 right-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-lg">${agent.badge}</span>` : '';
+
+            return `
+                <div data-id="${agent.id}" class="agent-card bg-white rounded-xl shadow-lg overflow-hidden flex flex-col sm:flex-row p-4 ring-1 ring-gray-100">
+                    ${badgeHtml}
+                    
+                    <!-- Secțiunea de poză și rating (stânga) -->
+                    <div class="flex-shrink-0 flex flex-col items-center sm:items-start sm:pr-4 sm:border-r border-gray-200 mb-4 sm:mb-0">
+                        <img src="${agent.photoUrl}" alt="Poza Agent ${agent.name}" class="w-24 h-24 rounded-full object-cover mb-3 border-4 border-blue-100">
+                        
+                        <div class="text-center sm:text-left">
+                            <div class="flex items-center justify-center sm:justify-start mb-1" title="${agent.rating} stele din 5">
+                                ${ratingHtml}
+                            </div>
+                            <span class="text-sm font-semibold text-gray-800">${agent.rating}</span>
+                            <span class="text-xs text-gray-500">(${agent.reviews} recenzii)</span>
+                        </div>
+                    </div>
+
+                    <!-- Detalii agent (dreapta) -->
+                    <div class="flex-grow sm:pl-4">
+                        <h3 class="text-xl font-bold text-gray-900 mb-1">
+                            <a href="agent.html?id=${agent.id}" class="hover:text-blue-600 transition-colors">${agent.name}</a>
+                        </h3>
+                        <p class="text-sm text-blue-600 font-semibold mb-3">${agent.specialization} Expert în ${agent.location}</p>
+                        
+                        <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm mt-3">
+                            <!-- Tranzacții Finalizate -->
+                            <div class="flex items-center">
+                                <span class="text-blue-500 mr-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2V7a5 5 0 00-5-5zM9 7a1 1 0 012 0v2a1 1 0 01-2 0V7z" />
+                                    </svg>
+                                </span>
+                                <span class="text-gray-700 font-medium">${agent.transactions} Tranzacții</span>
+                            </div>
+
+                            <!-- Vechime în Piață -->
+                            <div class="flex items-center">
+                                <span class="text-blue-500 mr-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 00-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                    </svg>
+                                </span>
+                                <span class="text-gray-700 font-medium">${agent.experienceYears} Ani Experiență</span>
+                            </div>
+                        </div>
+
+                        <!-- Butoane de acțiune -->
+                        <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end space-x-2">
+                            <button onclick="window.location.href='agent.html?id=${agent.id}'" class="text-sm px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                                Vezi Profil
+                            </button>
+                            <button class="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                                Contactează
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funcție principală pentru a filtra și a popula lista
+        function filterAndRenderAgents(searchParams = {}) {
+            const { location = '', specialization = 'Toate' } = searchParams;
+
+            const filteredAgents = mockAgents.filter(agent => {
+                const matchesLocation = location === '' || agent.location.toLowerCase().includes(location.toLowerCase());
+                const matchesSpecialization = specialization === 'Toate' || agent.specialization === specialization;
+                
+                return matchesLocation && matchesSpecialization;
+            });
+
+            // Sortează după rating (descrescător)
+            filteredAgents.sort((a, b) => b.rating - a.rating);
+
+            const resultsContainer = document.getElementById('agent-results');
+            const resultsTitle = document.getElementById('results-title');
+
+            if (filteredAgents.length > 0) {
+                const agentsHtml = filteredAgents.map(createAgentCard).join('');
+                resultsContainer.innerHTML = `
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-bold text-gray-800">${filteredAgents.length} Agenți Găsiți</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${agentsHtml}
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultsContainer.innerHTML = `
+                    <div class="text-center py-10 bg-white rounded-xl shadow-lg ring-1 ring-gray-100">
+                        <h3 class="text-xl font-semibold text-gray-800">Nu am găsit agenți care să corespundă criteriilor.</h3>
+                        <p class="text-gray-500 mt-2">Încearcă o altă locație sau specializare.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Funcție pentru a prelua datele din formular și a iniția căutarea
+        function performSearch() {
+            const location = document.getElementById('location').value.trim();
+            const specialization = document.getElementById('specialization').value;
+
+            const searchParams = {
+                location: location,
+                specialization: specialization
+            };
+
+            console.log("Căutare agent inițiată cu parametrii:", searchParams);
+            filterAndRenderAgents(searchParams);
+        }
+
+        // Adaugă event listener pe butonul de căutare
+        document.getElementById('search-button').addEventListener('click', performSearch);
+
+        // Populează lista inițială la încărcarea paginii
+        document.addEventListener('DOMContentLoaded', () => {
+            filterAndRenderAgents(); // Afișează toți agenții la început
+        });
+    </script>
+</body>
+</html>
