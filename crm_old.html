@@ -30,21 +30,14 @@
             margin-top: 12px;
         }
         .grid-row.expanded .inline-edit {display: block;}
-
-        /* Custom style for submenu active state logic handled via JS, but base styles here */
-        .tab-button.active-tab {
-            color: #2563eb; /* text-blue-600 */
-            border-bottom-color: #2563eb;
-        }
     </style>
 </head>
 <body class="p-4 sm:p-8">
 
-<!-- FIXED HEADER GROUP -->
-<div class="fixed inset-x-0 top-0 z-50 bg-white shadow-md">
-    
-    <!-- 1. MAIN MENU -->
-    <div class="border-b border-gray-100">
+
+		<!-- TOP MENU BAR – Fixed at the very top, works on all pages -->
+<div class="fixed inset-x-0 top-0 z-50">
+    <div class="bg-white shadow-lg border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
 
@@ -71,30 +64,10 @@
             </div>
         </div>
     </div>
-
-    <!-- 2. SUBMENU (GLUED) -->
-    <div class="bg-gray-50 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center h-12 space-x-8 overflow-x-auto no-scrollbar" id="main-tabs">
-                <button data-tab="my" class="tab-button h-full flex items-center px-1 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600 hover:text-indigo-800 transition whitespace-nowrap">
-                    Listările Mele (<span id="property-count">0</span>)
-                </button>
-                <button data-tab="office" class="tab-button h-full flex items-center px-1 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300 transition whitespace-nowrap">
-                    Listările Biroului
-                </button>
-                <button data-tab="county" class="tab-button h-full flex items-center px-1 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300 transition whitespace-nowrap">
-                    Listările Agenților din Județ
-                </button>
-				<a href="edit_profil.html" class="tab-button h-full flex items-center px-1 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300 transition whitespace-nowrap">
-                    Edit Profil
-                </a>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- Spacer increased to account for double header (approx 7rem total height) -->
-<div class="pt-36"></div>
+<!-- This tiny padding pushes your page content below the fixed menu -->
+<div class="pt-20"></div>
 
 
 <div class="max-w-7xl mx-auto w-full">
@@ -104,9 +77,14 @@
     </header>
 
     <div class="bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
-        <!-- Toolbar containing only the Action Button now -->
-        <div class="flex justify-end mb-6">
-            <button id="add-property-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition">
+        <div class="flex items-center mb-6">
+            <div class="flex flex-grow" id="main-tabs">
+                <button data-tab="my" class="tab-button py-2 px-4 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600 bg-indigo-50/50">Listările Mele (<span id="property-count">0</span>)</button>
+                <button data-tab="office" class="tab-button py-2 px-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Listările Biroului</button>
+                <button data-tab="county" class="tab-button py-2 px-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Listările Agenților din Județ</button>
+                <div class="flex-grow"></div>
+            </div>
+            <button id="add-property-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition ml-4">
                 + Adaugă Proprietate Nouă
             </button>
         </div>
@@ -134,26 +112,35 @@
     let activeFilters = {status:new Set(STATUS_OPTIONS),transaction:new Set(TRANSACTION_TYPES),location:'',priceMin:0,priceMax:Infinity};
     let activeTab = 'my';
 
-    const MOCKUP_PROPERTIES = [
+    const MOCKUP_PROPERTIES = [ /* întregul array rămâne neschimbat */ 
 			{ id: 'p1', status: 'Activ', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 2 cam. Ultra-central, Et. 3', location: 'Cluj-Napoca', zone: 'Ultracentrală', county: 'Cluj', country: 'România', price: 120000, commissionPercent: 3, collaborationCommission: 1.5, commissionValue: 3600, area: 55, rooms: 2, floor: 3, yearBuilt: 1985, description: 'Apartament excelent renovat, vedere panoramică.', portals: ['Imobiliare.ro', 'Storia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Eroilor, Nr. 15', ownerType: 'me',addedDate:'15.11.2025',ownerName:'Popescu Ion',ownerPhone:'0722 123 456',ownerEmail:'ion@email.ro' },
 		    { id: 'p3', status: 'În lucru', type: 'Teren', transaction: 'Vânzare', title: 'Teren intravilan 800mp', location: 'Gilău', zone: 'Zona Industrială', county: 'Cluj', country: 'România', price: 80000, commissionPercent: 4, collaborationCommission: 2.0, commissionValue: 3200, area: 800, rooms: 0, floor: 0, yearBuilt: 0, description: 'Teren ideal pentru depozit sau hală de producție.', portals: ['Storia'], mainImage: 'https://placehold.co/160x90/f97316/ffffff?text=LUCRU', addressExact: 'DJ107A, km 5', ownerType: 'me',addedDate:'15.11.2025',ownerName:'Popescu Ion',ownerPhone:'0722 123 456',ownerEmail:'ion@email.ro' },
             { id: 'p7', status: 'Incomplet', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 3 cam. Mărăști, de renovat', location: 'Cluj-Napoca', zone: 'Mărăști', county: 'Cluj', country: 'România', price: 95000, commissionPercent: 3.5, collaborationCommission: 1.0, commissionValue: 3325, area: 70, rooms: 3, floor: 4, yearBuilt: 1978, description: 'Necesită renovare completă, potențial mare.', portals: [], mainImage: 'https://placehold.co/160x90/f59e0b/ffffff?text=INCOMPL', addressExact: 'Str. Aurel Vlaicu, Bl. 10', ownerType: 'me',addedDate:'15.11.2025',ownerName:'Popescu Ion',ownerPhone:'0722 123 456',ownerEmail:'ion@email.ro' },
+            // Adăugiri
             { id: 'p10', status: 'Activ', type: 'Apartament', transaction: 'Închiriere', title: 'Studio modern, Bloc Nou', location: 'Cluj-Napoca', zone: 'Bună Ziua', county: 'Cluj', country: 'România', price: 400, commissionPercent: 100, collaborationCommission: 50, commissionValue: 400, area: 40, rooms: 1, floor: 5, yearBuilt: 2022, description: 'Studio complet mobilat și utilat, disponibil imediat.', portals: ['Imobiliare.ro', 'Publi24'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Fabricii', ownerType: 'me',addedDate:'15.11.2025',ownerName:'Popescu Ion',ownerPhone:'0722 123 456',ownerEmail:'ion@email.ro' },
             { id: 'p11', status: 'În lucru', type: 'Casă', transaction: 'Vânzare', title: 'Casă 5 cam. Florești, de finisat', location: 'Florești', zone: 'Cetate', county: 'Cluj', country: 'România', price: 180000, commissionPercent: 2.5, collaborationCommission: 1.5, commissionValue: 4500, area: 150, rooms: 5, floor: 1, yearBuilt: 2020, description: 'Casă P+E, interior la gri, exterior finisat.', portals: ['Storia'], mainImage: 'https://placehold.co/160x90/f97316/ffffff?text=LUCRU', addressExact: 'Str. Florilor, Nr. 5', ownerType: 'me' ,addedDate:'15.11.2025',ownerName:'Popescu Ion',ownerPhone:'0722 123 456',ownerEmail:'ion@email.ro'},
             { id: 'p12', status: 'Activ', type: 'Teren', transaction: 'Vânzare', title: 'Teren Construibil 1200mp, Gilău', location: 'Gilău', zone: 'Lângă Pădure', county: 'Cluj', country: 'România', price: 100000, commissionPercent: 3, collaborationCommission: 1.5, commissionValue: 3000, area: 1200, rooms: 0, floor: 0, yearBuilt: 0, description: 'Teren cu PUZ aprobat pentru locuințe.', portals: ['Olimpia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Drumul Principal', ownerType: 'me' },
             { id: 'p13', status: 'Tranzacționat', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 2 cam. Gheorgheni, vandut rapid', location: 'Cluj-Napoca', zone: 'Gheorgheni', county: 'Cluj', country: 'România', price: 110000, commissionPercent: 3, collaborationCommission: 0.5, commissionValue: 3300, area: 50, rooms: 2, floor: 8, yearBuilt: 1990, description: 'Tranzacționat în 7 zile.', portals: ['Imobiliare.ro'], mainImage: 'https://placehold.co/160x90/ef4444/ffffff?text=VANDUT', addressExact: 'Str. Liviu Rebreanu', ownerType: 'me' ,addedDate:'15.11.2025',ownerName:'Popescu Ion',ownerPhone:'0722 123 456',ownerEmail:'ion@email.ro'},
             
+            // ====================================================================================================
+            // Listările Biroului (ownerType: 'office') - 7 Proprietăți
+            // ====================================================================================================
             { id: 'p2', status: 'Tranzacționat', type: 'Casă', transaction: 'Vânzare', title: 'Casă 4 cam. curte 500mp', location: 'Florești', zone: 'Centru Florești', county: 'Cluj', country: 'România', price: 210000, commissionPercent: 2.5, collaborationCommission: 1.0, commissionValue: 5250, area: 120, rooms: 4, floor: 0, yearBuilt: 2018, description: 'Casă individuală, finisaje premium, mutare imediată.', portals: ['Imobiliare.ro'], mainImage: 'https://placehold.co/160x90/ef4444/ffffff?text=VANDUT', addressExact: 'Str. Principală, Nr. 200', ownerType: 'office',addedDate:'15.11.2025' },
             { id: 'p5', status: 'Retras', type: 'Birou', transaction: 'Închiriere', title: 'Spațiu Birouri 100mp', location: 'București', zone: 'Piata Victoriei', county: 'București', country: 'România', price: 1200, commissionPercent: 100, collaborationCommission: 50, commissionValue: 1200, area: 100, rooms: 3, floor: 1, yearBuilt: 2005, description: 'Spațiu de birouri open-space, ideal pentru IT.', portals: [], mainImage: 'https://placehold.co/160x90/6b7280/ffffff?text=RETRAS', addressExact: 'Bd. Iancu de Hunedoara, Nr. 4', ownerType: 'office',addedDate:'15.11.2025' },
             { id: 'p8', status: 'Activ', type: 'Apartament', transaction: 'Închiriere', title: 'Garsonieră Centrală, Mobilată', location: 'Cluj-Napoca', zone: 'Central', county: 'Cluj', country: 'România', price: 350, commissionPercent: 100, collaborationCommission: 50, commissionValue: 350, area: 35, rooms: 1, floor: 2, yearBuilt: 2000, description: 'Garsonieră excelentă pentru studenți.', portals: ['Publi24'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Bd. 21 Decembrie 1989', ownerType: 'office' ,addedDate:'15.11.2025'},
+            // Adăugiri
             { id: 'p14', status: 'Activ', type: 'Birou', transaction: 'Închiriere', title: 'Clădire Birouri Clasa A, 500mp', location: 'București', zone: 'Aviației', county: 'București', country: 'România', price: 8000, commissionPercent: 100, collaborationCommission: 50, commissionValue: 8000, area: 500, rooms: 10, floor: 3, yearBuilt: 2015, description: 'Spațiu modern, etaj întreg, parcare inclusă.', portals: ['Imobiliare.ro', 'Storia', 'Olimpia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Unirii', ownerType: 'office',addedDate:'15.11.2025' },
             { id: 'p15', status: 'Incomplet', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 4 cam. de lux, Timișoara', location: 'Timișoara', zone: 'Central', county: 'Timiș', country: 'România', price: 250000, commissionPercent: 2.0, collaborationCommission: 1.0, commissionValue: 5000, area: 100, rooms: 4, floor: 7, yearBuilt: 2019, description: 'Apartament finisat premium, descriere în așteptare.', portals: ['Imobiliare.ro'], mainImage: 'https://placehold.co/160x90/f59e0b/ffffff?text=INCOMPL', addressExact: 'Bd. Revoluției', ownerType: 'office',addedDate:'15.11.2025' },
             { id: 'p16', status: 'Retras', type: 'Casă', transaction: 'Vânzare', title: 'Casă veche de renovat, Sibiu', location: 'Sibiu', zone: 'Turnișor', county: 'Sibiu', country: 'România', price: 90000, commissionPercent: 3, collaborationCommission: 1.5, commissionValue: 2700, area: 80, rooms: 3, floor: 0, yearBuilt: 1950, description: 'Retrasă temporar de la vânzare, necesită renovare.', portals: [], mainImage: 'https://placehold.co/160x90/6b7280/ffffff?text=RETRAS', addressExact: 'Str. Ocnei', ownerType: 'office' ,addedDate:'15.11.2025'},
             { id: 'p17', status: 'Activ', type: 'Apartament', transaction: 'Închiriere', title: 'Apartament 2 cam, Zorilor', location: 'Cluj-Napoca', zone: 'Zorilor', county: 'Cluj', country: 'România', price: 550, commissionPercent: 100, collaborationCommission: 50, commissionValue: 550, area: 50, rooms: 2, floor: 4, yearBuilt: 1988, description: 'Apartament mobilat și utilat complet.', portals: ['Storia', 'Publi24'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Observatorului', ownerType: 'office',addedDate:'15.11.2025' },
 
+            // ====================================================================================================
+            // Listările Agenților din Județ (ownerType: 'county') - 7 Proprietăți
+            // ====================================================================================================
             { id: 'p4', status: 'Activ', type: 'Apartament', transaction: 'Închiriere', title: 'Studio modern, Bloc Nou', location: 'Timișoara', zone: 'Zona Iulius Mall', county: 'Timiș', country: 'România', price: 400, commissionPercent: 50, collaborationCommission: 50, commissionValue: 200, area: 40, rooms: 1, floor: 5, yearBuilt: 2021, description: 'Studio complet mobilat și utilat, disponibil imediat.', portals: ['Imobiliare.ro', 'Olimpia', 'Publi24'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Calea Aradului, Nr. 5', ownerType: 'county',addedDate:'15.11.2025' },
             { id: 'p6', status: 'Activ', type: 'Casă', transaction: 'Vânzare', title: 'Vilă P+1, 5 camere, Grădină', location: 'Iași', zone: 'Copou', county: 'Iași', country: 'România', price: 350000, commissionPercent: 2.0, collaborationCommission: 1.0, commissionValue: 7000, area: 180, rooms: 5, floor: 1, yearBuilt: 2015, description: 'Vilă de lux cu piscină interioară.', portals: ['Imobiliare.ro', 'Olimpia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Sărăriei, Nr. 12', ownerType: 'county',addedDate:'15.11.2025' },
             { id: 'p9', status: 'Incomplet', type: 'Teren', transaction: 'Vânzare', title: 'Teren Construibil Sibiu', location: 'Sibiu', zone: 'Calea Cisnădiei', county: 'Sibiu', country: 'România', price: 50000, commissionPercent: 4, collaborationCommission: 2, commissionValue: 2000, area: 500, rooms: 0, floor: 0, yearBuilt: 0, description: 'Teren ideal pentru casă P+1.', portals: [], mainImage: 'https://placehold.co/160x90/f59e0b/ffffff?text=INCOMPL', addressExact: 'Str. Luncii', ownerType: 'county' ,addedDate:'15.11.2025'},
+            // Adăugiri
             { id: 'p18', status: 'Activ', type: 'Teren', transaction: 'Vânzare', title: 'Teren 700mp, Brașov', location: 'Brașov', zone: 'Stupini', county: 'Brașov', country: 'România', price: 75000, commissionPercent: 3.5, collaborationCommission: 1.5, commissionValue: 2625, area: 700, rooms: 0, floor: 0, yearBuilt: 0, description: 'Teren intravilan, utilități aproape.', portals: ['Storia'], mainImage: 'https://placehold.co/160x90/22c55e/ffffff?text=ACTIV', addressExact: 'Str. Stupinii, Nr. 10', ownerType: 'county' ,addedDate:'15.11.2025'},
             { id: 'p19', status: 'În lucru', type: 'Apartament', transaction: 'Vânzare', title: 'Ap. 3 cam. Constanța, vedere mare', location: 'Constanța', zone: 'Faleză Nord', county: 'Constanța', country: 'România', price: 150000, commissionPercent: 2.5, collaborationCommission: 1.0, commissionValue: 3750, area: 85, rooms: 3, floor: 9, yearBuilt: 2010, description: 'Bloc nou, se așteaptă documentația finală.', portals: ['Imobiliare.ro'], mainImage: 'https://placehold.co/160x90/f97316/ffffff?text=LUCRU', addressExact: 'Bd. Mamaia, Bl. D5', ownerType: 'county',addedDate:'15.11.2025' },
             { id: 'p20', status: 'Tranzacționat', type: 'Casă', transaction: 'Vânzare', title: 'Vilă tip Duplex, Oradea', location: 'Oradea', zone: 'Nufărul', county: 'Bihor', country: 'România', price: 140000, commissionPercent: 3, collaborationCommission: 1.5, commissionValue: 4200, area: 110, rooms: 4, floor: 1, yearBuilt: 2017, description: 'Vândută în colaborare cu agent local.', portals: ['Olimpia', 'Publi24'], mainImage: 'https://placehold.co/160x90/ef4444/ffffff?text=VANDUT', addressExact: 'Str. Salcâmilor, Nr. 3', ownerType: 'county',addedDate:'15.11.2025' },
@@ -216,20 +203,27 @@
             container.appendChild(row);
         });
 
+        // LOGICĂ EXPAND / EDIT INLINE – REPARAT
         document.querySelectorAll('.grid-row').forEach(row => {
             row.addEventListener('click', (e) => {
+                // Oprim propagarea dacă click-ul vine din interiorul formularului inline
                 if (e.target.closest('.inline-edit')) return;
+
                 document.querySelectorAll('.grid-row.expanded').forEach(r => r !== row && r.classList.remove('expanded'));
                 row.classList.toggle('expanded');
+
                 if (row.classList.contains('expanded')) {
-                    const saveBtn = row.querySelector('.inline-save-btn');
+                    const saveBtn   = row.querySelector('.inline-save-btn');
                     const deleteBtn = row.querySelector('.inline-delete-btn');
                     const cancelBtn = row.querySelector('.inline-cancel-btn');
-                    saveBtn.onclick = ev => { ev.stopPropagation(); alert(`Proprietatea ${row.dataset.id} salvată (Mock)!`); row.classList.remove('expanded'); };
+
+                    saveBtn.onclick   = ev => { ev.stopPropagation(); alert(`Proprietatea ${row.dataset.id} salvată (Mock)!`); row.classList.remove('expanded'); };
                     deleteBtn.onclick = ev => { ev.stopPropagation(); if(confirm('Ștergi proprietatea?')) { row.remove(); filterAndRender(); } };
                     cancelBtn.onclick = ev => { ev.stopPropagation(); row.classList.remove('expanded'); };
                 }
             });
+
+            // Oprim complet propagarea pe toată zona inline (input-uri, select-uri, butoane etc.)
             const inline = row.querySelector('.inline-edit');
             if (inline) {
                 inline.addEventListener('click', ev => ev.stopPropagation());
@@ -260,26 +254,17 @@
         if(activeTab===t) return;
         activeTab = t;
         document.querySelectorAll('.tab-button').forEach(b=>{
-            // Toggle active state styling
-            const isActive = b.dataset.tab === t;
-            
-            if (isActive) {
-                b.classList.remove('border-transparent', 'text-gray-600');
-                b.classList.add('border-indigo-600', 'text-indigo-600');
-            } else {
-                b.classList.add('border-transparent', 'text-gray-600');
-                b.classList.remove('border-indigo-600', 'text-indigo-600');
-            }
+            b.classList.toggle('border-indigo-600', b.dataset.tab===t);
+            b.classList.toggle('text-indigo-600', b.dataset.tab===t);
+            b.classList.toggle('bg-indigo-50/50', b.dataset.tab===t);
+            b.classList.toggle('border-transparent', b.dataset.tab!==t);
+            b.classList.toggle('text-gray-500', b.dataset.tab!==t);
         });
         filterAndRender();
     }
 
     document.addEventListener('DOMContentLoaded',()=>{
-        document.querySelectorAll('.tab-button').forEach(b=>b.addEventListener('click',e=>{
-            // Find the closest button element in case click hits the span inside
-            const button = e.target.closest('.tab-button');
-            if(button) setTab(button.dataset.tab);
-        }));
+        document.querySelectorAll('.tab-button').forEach(b=>b.addEventListener('click',e=>setTab(e.target.dataset.tab)));
         filterAndRender();
     });
 </script>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editare Profil Agent - [Nume Agent]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* A slightly darker background for admin pages */
+        }
+        .form-input {
+            @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out;
+        }
+        .form-label {
+            @apply block text-sm font-semibold text-gray-700 mb-1;
+        }
+        .section-card {
+            @apply bg-white p-6 md:p-8 rounded-xl shadow-lg border-t-4 border-blue-500 mb-12;
+        }
+        .listing-card-edit {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .listing-card-edit:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+<!-- FIXED HEADER GROUP -->
+<div class="fixed inset-x-0 top-0 z-50 bg-white shadow-md">
+    
+    <!-- 1. MAIN MENU -->
+    <div class="border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="index.html" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center text-white font-bold text-xl">H</div>
+                        <span class="text-xl font-bold text-gray-800 hidden sm:block">Real Estate</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Contact Us</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Educational</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Profesionisti</a>
+                    <a href="#" class="text-gray-700 hover:text-indigo-600 font-medium transition">Analiza De Piata</a>
+                    <a href="index.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Buy</a>
+                    <a href="index.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Rent</a>
+                    <a href="profil.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Profilul meu</a>
+                    <a href="agenti.html" class="text-gray-700 hover:text-indigo-600 font-medium transition">Find an Agent</a>
+                    <a href="crm.html" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg transition shadow-md">Login</a>
+                </div>             
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. SUBMENU (GLUED) -->
+    <div class="bg-gray-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center h-12 space-x-8 overflow-x-auto no-scrollbar" id="main-tabs">
+                <button data-tab="my" class="tab-button h-full flex items-center px-1 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600 hover:text-indigo-800 transition whitespace-nowrap">
+                    Listările Mele (<span id="property-count">0</span>)
+                </button>
+                <button data-tab="office" class="tab-button h-full flex items-center px-1 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300 transition whitespace-nowrap">
+                    Listările Biroului
+                </button>
+                <button data-tab="county" class="tab-button h-full flex items-center px-1 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300 transition whitespace-nowrap">
+                    Listările Agenților din Județ
+                </button>
+				<a href="edit_profil.html" class="tab-button h-full flex items-center px-1 text-sm font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300 transition whitespace-nowrap">
+                    Edit Profil
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="pt-20"></div><div class="pt-20"></div>
+
+<div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- SAVE BAR -->
+    <div class="bg-white p-4 rounded-lg shadow-md mb-8 flex justify-between items-center sticky top-20 z-40">
+        <h1 class="text-2xl font-bold text-gray-800">Modificare Profil Agent</h1>
+        <div class="flex space-x-3">
+            <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-5 rounded-lg transition duration-300">Anulează</button>
+            <button class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-5 rounded-lg shadow-lg transition duration-300">
+                <i class="fas fa-save mr-2"></i> Salvează Modificările
+            </button>
+        </div>
+    </div>
+
+    <!-- SECȚIUNEA 1: EDITARE PROFIL AGENT -->
+    <section class="section-card">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">Informații Publice</h2>
+        <form class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Agent Photo -->
+            <div class="md:col-span-1 flex flex-col items-center">
+                <img id="agent-photo-preview" src="https://placehold.co/150x150/1d4ed8/ffffff?text=M+P" alt="Agent" class="w-40 h-40 rounded-full object-cover shadow-xl ring-4 ring-blue-100 mb-4">
+                <button type="button" class="bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold py-2 px-4 rounded-lg transition duration-300">
+                    <i class="fas fa-upload mr-2"></i> Încarcă o poză nouă
+                </button>
+                <input type="file" class="hidden" id="photo-upload">
+            </div>
+
+            <!-- Agent Details -->
+            <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label for="agent-name" class="form-label">Nume Agent</label>
+                    <input type="text" id="agent-name" class="form-input" value="Mihai Popescu">
+                </div>
+                <div>
+                    <label for="agent-title" class="form-label">Titlu Profesional</label>
+                    <input type="text" id="agent-title" class="form-input" value="Specialist Imobiliar Certificat (Broker)">
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="agent-bio" class="form-label">Descriere (Bio)</label>
+                    <textarea id="agent-bio" rows="5" class="form-input">Sunt dedicat să ofer cea mai bună experiență clienților mei, bazându-mă pe 10 ani de experiență în piața rezidențială și comercială din regiunea Cluj-Napoca. Misiunea mea este să fac din tranzacția ta imobiliară una de succes, eficientă și lipsită de stres.</textarea>
+                </div>
+                 <div>
+                    <label for="agent-phone" class="form-label">Telefon de Contact</label>
+                    <input type="tel" id="agent-phone" class="form-input" value="+40 722 123 456">
+                </div>
+                <div>
+                    <label for="total-deals" class="form-label">Tranzacții Finalizate</label>
+                    <input type="number" id="total-deals" class="form-input" value="58">
+                </div>
+            </div>
+        </form>
+    </section>
+
+
+    <!-- SECȚIUNEA 3: MANAGEMENT RECENZII -->
+    <section class="section-card">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">Management Recenzii Clienți</h2>
+        <div id="reviews-management" class="space-y-4">
+            <!-- Review management items will be injected here -->
+        </div>
+    </section>
+
+</div>
+
+<script>
+    // Mock data reused from the profile page for convenience
+    const mockAgent = { name: "Mihai Popescu", title: "Specialist Imobiliar Certificat (Broker)", bio: "Sunt dedicat să ofer cea mai bună experiență clienților mei...", deals: 58, phone: "+40 722 123 456", photoUrl: "https://placehold.co/150x150/1d4ed8/ffffff?text=M+P" };
+    const mockReviews = [
+        { client: "Andrei D.", rating: 5, text: "Mihai a fost excepțional! A vândut apartamentul în 3 săptămâni...", featured: true },
+        { client: "Ioana C.", rating: 5, text: "Foarte prompt și comunicativ. Ne-a ajutat să găsim casa perfectă...", featured: true },
+        { client: "Florin V.", rating: 4, text: "Un bun negociator. Aș fi vrut mai multă viteză în documentație...", featured: false },
+        { client: "Elena B.", rating: 5, text: "Cel mai bun agent cu care am lucrat. Cunoștea piața perfect...", featured: true },
+    ];
+    const mockProperties = [
+        { id: 1, title: "Apartament 3 camere, Centru", price: "185,000 €", location: "Cluj-Napoca, Ultracentral", images: ["https://placehold.co/800x600/10b981/ffffff?text=Vedere+Living"] },
+        { id: 2, title: "Vilă Modernă, Finișaje Premium", price: "350,000 €", location: "Florești, Zona Deal", images: ["https://placehold.co/800x600/f59e0b/ffffff?text=Vila+Exterior"] },
+        { id: 3, title: "Studio de Închiriat, Zona Universitate", price: "450 €/lună", location: "Cluj-Napoca, Mărăști", images: ["https://placehold.co/800x600/ef4444/ffffff?text=Studio+Principal"] },
+    ];
+
+    // Function to create an editable property card
+    function createEditablePropertyCard(property) {
+        return `
+            <div class="listing-card-edit bg-white rounded-xl overflow-hidden shadow-lg border border-gray-200">
+                <div class="relative h-40 bg-gray-200">
+                    <img src="${property.images[0]}" alt="Imagine ${property.title}" class="w-full h-full object-cover">
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-bold text-gray-900 truncate">${property.title}</h3>
+                    <p class="text-sm text-gray-500 mb-2">${property.location}</p>
+                    <p class="text-xl font-extrabold text-blue-600 mb-4">${property.price}</p>
+                    <div class="flex space-x-2">
+                        <button class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-3 rounded-lg text-sm transition duration-300"><i class="fas fa-pencil-alt mr-1"></i> Editează</button>
+                        <button class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-3 rounded-lg text-sm transition duration-300"><i class="fas fa-trash-alt mr-1"></i> Șterge</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Function to create a review management item
+    function createReviewManagementItem(review) {
+        const stars = Array(review.rating).fill('<i class="fas fa-star text-yellow-400"></i>').join('');
+        const toggleClass = review.featured ? 'bg-blue-600' : 'bg-gray-200';
+        const toggleTranslate = review.featured ? 'translate-x-5' : 'translate-x-0';
+
+        return `
+            <div class="bg-gray-50 p-4 rounded-lg shadow-sm border flex justify-between items-center">
+                <div>
+                    <div class="flex items-center mb-1">${stars}<span class="ml-2 font-bold text-gray-800">${review.client}</span></div>
+                    <p class="text-sm text-gray-600 italic">"${review.text}"</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm font-medium text-gray-700">${review.featured ? 'Vizibil' : 'Ascuns'}</span>
+                    <button type="button" class="${toggleClass} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none" role="switch" aria-checked="${review.featured}">
+                        <span class="sr-only">Toggle Feature</span>
+                        <span class="${toggleTranslate} inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+
+    // Main render function for the edit page
+    function renderEditPage() {
+        // Render reviews
+        const reviewsContainer = document.getElementById('reviews-management');
+        reviewsContainer.innerHTML = mockReviews.map(r => createReviewManagementItem(r)).join('');
+    }
+
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', renderEditPage);
+</script>
+</body>
+</html>
